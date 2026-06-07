@@ -718,6 +718,11 @@ function renderRewards(){
         }
         return;
     }
+    
+    if(data.availableCoins < Number(reward.cost || 0)){
+    alert("Not enough available points for this reward yet.");
+    return;
+}
 
     data.rewards.forEach(r => {
         const canAfford = data.availableCoins >= Number(r.cost || 0);
