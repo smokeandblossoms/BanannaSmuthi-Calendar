@@ -404,25 +404,35 @@ function getWeeklyCoins(){
     return total;
 }
 
+function dayCountsForStreak(key){
+    return dayHasCompletedTask(key) || completedCoinTotalForDay(key) > 0;
+}
+
 function getCurrentStreak(){
     let streak = 0;
     let cursor = cleanDate(today);
 
+    /*
+      Streak rules:
+      - Today counts if the user has completed at least one task or earned any coins today.
+      - If today has not been completed yet, the streak can still show the streak from yesterday.
+      - Consecutive previous days are counted.
+      - The streak stops/reset as soon as a missed day is found.
+    */
+
+    if(!dayCountsForStreak(dateKey(cursor))){
+        cursor.setDate(cursor.getDate() - 1);
+    }
+
     while(true){
         const key = dateKey(cursor);
 
-        if(dayHasCompletedTask(key)){
+        if(dayCountsForStreak(key)){
             streak++;
             cursor.setDate(cursor.getDate() - 1);
-            continue;
+        } else {
+            break;
         }
-
-        if(key === dateKey(today)){
-            cursor.setDate(cursor.getDate() - 1);
-            continue;
-        }
-
-        break;
     }
 
     return streak;
@@ -548,6 +558,7 @@ function addTask(){
     renderTasks();
     buildCalendar();
     updateCoins();
+    renderRewards();
 }
 
 function toggleTask(i){
