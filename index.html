@@ -18,6 +18,24 @@ body{
 
     color:#2f2f2f;
 }
+    .sparkle{
+    position:absolute;
+    pointer-events:none;
+    font-size:14px;
+    animation: floatUp 0.8s ease-out forwards;
+    opacity:1;
+}
+
+@keyframes floatUp{
+    0%{
+        transform: translateY(0) scale(1);
+        opacity:1;
+    }
+    100%{
+        transform: translateY(-25px) scale(0.5);
+        opacity:0;
+    }
+}
 
 /* HEADER */
 header{
@@ -71,6 +89,7 @@ header{
 
 /* DAY TABS (GLASS EFFECT) */
 .day{
+    position:relative;
     background: rgba(255,255,255,0.5);
     border-radius:10px;
     padding:10px;
@@ -217,6 +236,21 @@ let data = JSON.parse(localStorage.getItem("cozyData")) || {
 function save(){
     localStorage.setItem("cozyData", JSON.stringify(data));
 }
+function createSparkles(dayElement){
+    for(let i=0;i<6;i++){
+        let star = document.createElement("div");
+        star.className = "sparkle";
+        star.innerText = "✨";
+
+        // random position inside day box
+        star.style.left = Math.random() * 40 + "px";
+        star.style.top = Math.random() * 30 + "px";
+
+        dayElement.appendChild(star);
+
+        setTimeout(()=>star.remove(), 800);
+    }
+}
 
 /* USER */
 function setUser(){
@@ -344,7 +378,17 @@ function toggleTask(i){
     if(t.done){
         data.coins += t.coins;
         data.lifetime += t.coins;
-    } else {
+    } 
+    let dayKey = selectedDay;
+    let dayBoxes = document.querySelectorAll(".day");
+
+    dayBoxes.forEach(box=>{
+    if(box.innerText.includes(dayKey.split("-")[2])){
+        createSparkles(box);
+    }
+    });
+    
+    else {
         data.coins -= t.coins;
         data.lifetime -= t.coins;
     }
