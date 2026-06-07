@@ -69,7 +69,7 @@ header{
     gap:8px;
 }
 
-/* DAY TABS (GLASS EFFECT) */
+/* DAY TABS */
 .day{
     background: rgba(255,255,255,0.5);
     border-radius:10px;
@@ -86,6 +86,33 @@ header{
     background: rgba(255,255,255,0.6);
 }
 
+/* COIN GLITTER EFFECT */
+@keyframes coinGlowBurst {
+    0% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 0 rgba(255,215,0,0));
+    }
+    40% {
+        transform: scale(1.3);
+        filter:
+            drop-shadow(0 0 6px gold)
+            drop-shadow(0 0 12px white)
+            drop-shadow(0 0 18px gold);
+    }
+    100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 0 rgba(255,215,0,0));
+    }
+}
+
+.coin-glitter {
+    display: inline-block;
+}
+
+.coin-glitter.animate {
+    animation: coinGlowBurst 600ms ease-out;
+}
+
 /* SIDEBAR */
 .sidebar{
     flex:1;
@@ -95,7 +122,6 @@ header{
     overflow:auto;
 }
 
-/* HIDDEN SIDEBAR */
 .sidebar.hidden{
     display:none;
 }
@@ -146,22 +172,19 @@ input{
 
 <header>
 <h2>
-  <img src="https://www.pngall.com/wp-content/uploads/15/Ponyo-PNG-File.png" alt="icon" style="height:28px; vertical-align:middle;">
+  <img src="https://www.pngall.com/wp-content/uploads/15/Ponyo-PNG-File.png" style="height:28px; vertical-align:middle;">
   The BanannaSmuthi Calendar
 </h2>
 </header>
 
-<!-- MONTH -->
 <h3 id="monthLabel"></h3>
 
 <div class="container">
 
-<!-- CALENDAR -->
 <div class="calendar">
     <div class="grid" id="calendar"></div>
 </div>
 
-<!-- SIDEBAR -->
 <div class="sidebar hidden" id="sidebar">
 
 <button onclick="closeSidebar()">← Close</button>
@@ -234,6 +257,20 @@ function setUser(){
     save();
 }
 
+/* COIN ANIMATION */
+function animateCoin(key){
+    const el = document.getElementById(`coin-${key}`);
+    if(!el) return;
+
+    el.classList.remove("animate");
+    void el.offsetWidth;
+    el.classList.add("animate");
+
+    setTimeout(()=>{
+        el.classList.remove("animate");
+    }, 650);
+}
+
 /* CALENDAR */
 function buildCalendar(){
     let cal = document.getElementById("calendar");
@@ -261,12 +298,12 @@ function buildCalendar(){
         cal.innerHTML += `
         <div class="day" onclick="openDay('${key}',${d})">
             ${d}
-            <small>🪙 ${coins}</small>
+            <small class="coin-glitter" id="coin-${key}">🪙 ${coins}</small>
         </div>`;
     }
 }
 
-/* OPEN / CLOSE SIDEBAR */
+/* OPEN / CLOSE */
 function openDay(key, day){
     selectedDay = key;
 
@@ -308,8 +345,8 @@ function addTask(){
     save();
     renderTasks();
     buildCalendar();
+    updateCoins();
 
-    // ✅ CLEAR INPUT FIELDS AFTER ADDING
     nameInput.value = "";
     coinInput.value = "";
     nameInput.focus();
@@ -336,8 +373,10 @@ function renderTasks(){
     updateCoins();
 }
 
+/* TOGGLE TASK */
 function toggleTask(i){
     let t = data.tasks[selectedDay].items[i];
+    let key = selectedDay;
 
     t.done = !t.done;
 
@@ -353,8 +392,13 @@ function toggleTask(i){
     renderTasks();
     buildCalendar();
     updateCoins();
+
+    if(t.done){
+        animateCoin(key);
+    }
 }
 
+/* DELETE TASK */
 function deleteTask(i){
     let t = data.tasks[selectedDay].items[i];
 
