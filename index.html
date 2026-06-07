@@ -15,6 +15,14 @@ body{
     background-attachment: fixed;
 }
 
+/* HEADER */
+header{
+    background:#7c9a6d;
+    color:white;
+    padding:15px;
+    text-align:center;
+}
+
 /* LAYOUT */
 .container{
     display:flex;
@@ -33,12 +41,33 @@ body{
     gap:8px;
 }
 
+/* DAY TILE */
 .day{
-    background: rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.55);
     padding:10px;
     border-radius:10px;
     cursor:pointer;
-    min-height:60px;
+    min-height:70px;
+    position:relative;
+}
+
+/* 🪙 COIN DISPLAY */
+.coin{
+    display:block;
+    font-size:12px;
+    margin-top:5px;
+    transition: transform 0.3s ease;
+}
+
+/* ✨ ANIMATION */
+@keyframes coinGlow {
+    0% { transform: scale(1); filter: brightness(1); }
+    40% { transform: scale(1.4); filter: brightness(1.8); }
+    100% { transform: scale(1); filter: brightness(1); }
+}
+
+.coin.animate{
+    animation: coinGlow 0.6s ease;
 }
 
 /* SIDEBAR */
@@ -72,26 +101,21 @@ button{
     cursor:pointer;
 }
 
-/* CLAIM BUTTON */
+/* REWARD BUTTON */
 .claim-btn{
     background:#ffb347;
 }
 .claim-btn:disabled{
     background:#ccc;
-    cursor:not-allowed;
-}
-
-/* BOX */
-.coins{
-    background:#fff3c4cc;
-    padding:10px;
-    border-radius:8px;
-    margin-bottom:10px;
 }
 </style>
 </head>
 
 <body>
+
+<header>
+<h2>🗓 The BanannaSmuthi Calendar</h2>
+</header>
 
 <div class="container">
 
@@ -105,23 +129,21 @@ button{
 
 <button onclick="closeSidebar()">← Close</button>
 
-<div class="coins">
-🪙 Available Points: <span id="available">0</span><br>
-🪙 Lifetime Earned: <span id="lifetime">0</span><br>
+<div>
+🪙 Available: <span id="available">0</span><br>
+🪙 Lifetime: <span id="lifetime">0</span>
 </div>
 
 <h3 id="selectedDay"></h3>
 
-<!-- TASKS -->
 <input id="taskInput" placeholder="New task">
-<input id="coinInput" type="number" placeholder="Points">
+<input id="coinInput" type="number" placeholder="Coins">
 <button onclick="addTask()">Add Task</button>
 
 <div id="taskList"></div>
 
 <hr>
 
-<!-- 🎁 REWARD CREATION (RESTORED) -->
 <h3>🎁 Rewards</h3>
 
 <input id="rewardName" placeholder="Reward name">
@@ -130,8 +152,7 @@ button{
 
 <div id="rewardList"></div>
 
-<!-- AVAILABLE POINTS DISPLAY -->
-<h4>🪙 Points available for rewards:</h4>
+<h4>🪙 Available for Rewards:</h4>
 <div id="rewardPoints">0</div>
 
 </div>
@@ -156,6 +177,7 @@ function save(){
 function openDay(key){
     selectedDay = key;
     document.getElementById("sidebar").classList.remove("hidden");
+    document.getElementById("selectedDay").innerText = key;
     renderTasks();
 }
 
@@ -183,10 +205,14 @@ function addTask(){
 
     save();
     renderTasks();
+    buildCalendar();
     updateUI();
+
+    document.getElementById("taskInput").value="";
+    document.getElementById("coinInput").value="";
 }
 
-/* TOGGLE TASK */
+/* TOGGLE TASK + ANIMATION FIX */
 function toggleTask(i){
     let t = data.tasks[selectedDay].items[i];
 
@@ -201,61 +227,29 @@ function toggleTask(i){
 
     save();
     renderTasks();
+    buildCalendar();
     updateUI();
-}
-
-/* DELETE TASK */
-function deleteTask(i){
-    let t = data.tasks[selectedDay].items[i];
 
     if(t.done){
-        data.available -= t.coins;
-        data.lifetime -= t.coins;
+        triggerCoinAnimation(selectedDay);
     }
-
-    data.tasks[selectedDay].items.splice(i,1);
-
-    save();
-    renderTasks();
-    updateUI();
 }
 
-/* 🎁 ADD REWARD (FIXED + RESTORED) */
-function addReward(){
-    let name = document.getElementById("rewardName").value;
-    let cost = parseInt(document.getElementById("rewardCost").value)||0;
+/* ✨ SAFE COIN ANIMATION (FIXED FOR REBUILT DOM) */
+function triggerCoinAnimation(dayKey){
+    requestAnimationFrame(() => {
+        const el = document.querySelector(`[data-key="${dayKey}"]`);
+        if(!el) return;
 
-    if(!name || cost <= 0) return;
+        const coin = el.querySelector(".coin");
+        if(!coin) return;
 
-    data.rewards.push({
-        name,
-        cost,
-        claimed:false
+        coin.classList.remove("animate");
+        void coin.offsetWidth;
+        coin.classList.add("animate");
+
+        setTimeout(()=>coin.classList.remove("animate"),600);
     });
-
-    save();
-    renderRewards();
-    updateUI();
-
-    document.getElementById("rewardName").value = "";
-    document.getElementById("rewardCost").value = "";
-}
-
-/* CLAIM REWARD */
-function claimReward(i){
-    let r = data.rewards[i];
-
-    if(data.available < r.cost){
-        alert("Not enough points!");
-        return;
-    }
-
-    data.available -= r.cost;
-    r.claimed = true;
-
-    save();
-    renderRewards();
-    updateUI();
 }
 
 /* RENDER TASKS */
@@ -275,6 +269,34 @@ function renderTasks(){
     });
 }
 
+/* REWARDS */
+function addReward(){
+    let name = document.getElementById("rewardName").value;
+    let cost = parseInt(document.getElementById("rewardCost").value)||0;
+
+    data.rewards.push({name,cost,claimed:false});
+
+    save();
+    renderRewards();
+    updateUI();
+}
+
+function claimReward(i){
+    let r = data.rewards[i];
+
+    if(data.available < r.cost){
+        alert("Not enough points!");
+        return;
+    }
+
+    data.available -= r.cost;
+    r.claimed = true;
+
+    save();
+    renderRewards();
+    updateUI();
+}
+
 /* RENDER REWARDS */
 function renderRewards(){
     let list = document.getElementById("rewardList");
@@ -286,21 +308,21 @@ function renderRewards(){
             <span>${r.name} - 🪙${r.cost}</span>
             <button class="claim-btn"
                 onclick="claimReward(${i})"
-                ${r.claimed ? "disabled" : ""}>
-                ${r.claimed ? "Claimed" : "Claim"}
+                ${r.claimed?"disabled":""}>
+                ${r.claimed?"Claimed":"Claim"}
             </button>
         </div>`;
     });
 }
 
-/* UPDATE UI */
+/* UI */
 function updateUI(){
     document.getElementById("available").innerText = data.available;
     document.getElementById("lifetime").innerText = data.lifetime;
     document.getElementById("rewardPoints").innerText = data.available;
 }
 
-/* CALENDAR */
+/* CALENDAR (FIXED STABLE COIN + DATA ATTRIBUTE) */
 function buildCalendar(){
     let cal = document.getElementById("calendar");
     cal.innerHTML = "";
@@ -308,9 +330,14 @@ function buildCalendar(){
     for(let d=1; d<=30; d++){
         let key = "day-"+d;
 
+        let coins = data.tasks[key]?.items
+            ?.filter(t=>t.done)
+            ?.reduce((a,b)=>a+b.coins,0) || 0;
+
         cal.innerHTML += `
-        <div class="day" onclick="openDay('${key}')">
+        <div class="day" data-key="${key}" onclick="openDay('${key}')">
             Day ${d}
+            <span class="coin">🪙 ${coins}</span>
         </div>`;
     }
 }
