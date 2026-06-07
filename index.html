@@ -23,21 +23,21 @@ header{
     text-align:center;
 }
 
-/* STATS BAR */
+/* TOP STATS */
 .statsBar{
     background:#ffffffcc;
     padding:10px;
     text-align:center;
-    font-weight:bold;
     display:flex;
     justify-content:space-around;
     flex-wrap:wrap;
+    font-weight:bold;
 }
 
 /* LAYOUT */
 .container{
     display:flex;
-    height:calc(100vh - 220px);
+    height:calc(100vh - 240px);
 }
 
 /* CALENDAR */
@@ -91,6 +91,18 @@ header{
     border-bottom:1px solid #eee;
 }
 
+/* REWARD ITEM */
+.reward{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin:6px 0;
+    padding:6px;
+    border:1px solid #ddd;
+    border-radius:6px;
+    background:white;
+}
+
 /* BUTTONS */
 button{
     background:#7c9a6d;
@@ -99,17 +111,6 @@ button{
     padding:6px 10px;
     border-radius:6px;
     cursor:pointer;
-}
-
-/* REWARD */
-.reward-item{
-    display:flex;
-    justify-content:space-between;
-    margin:6px 0;
-    padding:6px;
-    border:1px solid #ddd;
-    border-radius:6px;
-    background:white;
 }
 
 .claim-btn{
@@ -135,12 +136,12 @@ input{
 <h2>🗓 The BanannaSmuthi Calendar</h2>
 </header>
 
-<!-- 🔥 TOP STATS (STREAK + USER) -->
+<!-- 🔥 TOP STATS -->
 <div class="statsBar">
-    👤 User: <span id="userNameDisplay">Guest</span>
+    👤 User: <span id="userDisplay">Guest</span>
     🔥 Streak: <span id="streak">0</span>
     🪙 Available: <span id="available">0</span>
-    💰 Weekly: <span id="weekly">0</span>
+    📅 Weekly: <span id="weekly">0</span>
 </div>
 
 <div class="container">
@@ -158,8 +159,8 @@ input{
 <h3 id="selectedDay"></h3>
 
 <!-- 👤 USER -->
-<h4>👤 Set Name</h4>
-<input id="userInput" placeholder="Your name">
+<h4>👤 Name</h4>
+<input id="userInput" placeholder="Enter name">
 <button onclick="setUser()">Set Name</button>
 
 <hr>
@@ -182,6 +183,8 @@ input{
 
 <div id="rewardList"></div>
 
+<hr>
+
 <h4>🪙 Available to Use: <span id="usable">0</span></h4>
 
 </div>
@@ -196,7 +199,8 @@ let data = JSON.parse(localStorage.getItem("cozyData")) || {
     rewards:[],
     available:0,
     weekly:0,
-    user:"Guest"
+    user:"Guest",
+    selectedRewards:[]
 };
 
 function save(){
@@ -207,7 +211,6 @@ function save(){
 function setUser(){
     let name = document.getElementById("userInput").value;
     if(!name) return;
-
     data.user = name;
     save();
     updateUI();
@@ -226,7 +229,7 @@ function closeSidebar(){
     document.getElementById("sidebar").classList.add("hidden");
 }
 
-/* ADD TASK */
+/* TASKS */
 function addTask(){
     if(!selectedDay) return;
 
@@ -274,14 +277,22 @@ function addReward(){
     let name = document.getElementById("rewardName").value;
     let cost = parseInt(document.getElementById("rewardCost").value)||0;
 
-    data.rewards.push({
-        name,
-        cost,
-        claimed:false
-    });
-
+    data.rewards.push({name,cost,claimed:false});
     save();
     renderRewards();
+    updateUI();
+}
+
+/* SELECT REWARD (PREVIEW COST) */
+function toggleRewardSelect(i){
+    let idx = data.selectedRewards.indexOf(i);
+
+    if(idx === -1){
+        data.selectedRewards.push(i);
+    } else {
+        data.selectedRewards.splice(idx,1);
+    }
+
     updateUI();
 }
 
@@ -311,7 +322,6 @@ function buildCalendar(){
         let key = "day-"+d;
 
         let coins = 0;
-
         if(data.tasks[key]){
             coins = data.tasks[key].items
                 .filter(t=>t.done)
@@ -326,19 +336,15 @@ function buildCalendar(){
     }
 }
 
-/* STREAK (SIMPLE LOGIC) */
+/* STREAK */
 function getStreak(){
     let streak = 0;
-
     for(let i=1;i<=30;i++){
-        let key = "day-"+i;
-        if(data.tasks[key]?.items?.some(t=>t.done)){
+        let k = "day-"+i;
+        if(data.tasks[k]?.items?.some(t=>t.done)){
             streak++;
-        } else {
-            break;
-        }
+        } else break;
     }
-
     return streak;
 }
 
@@ -348,13 +354,21 @@ function renderRewards(){
     list.innerHTML = "";
 
     data.rewards.forEach((r,i)=>{
+        let selected = data.selectedRewards.includes(i);
+
         list.innerHTML += `
-        <div class="reward-item">
-            <span>${r.name} - 🪙${r.cost}</span>
+        <div class="reward">
+            <div>
+                <input type="checkbox"
+                    onchange="toggleRewardSelect(${i})"
+                    ${selected ? "checked":""}>
+                ${r.name} - 🪙${r.cost}
+            </div>
+
             <button class="claim-btn"
                 onclick="claimReward(${i})"
-                ${r.claimed ? "disabled" : ""}>
-                ${r.claimed ? "Claimed" : "Claim"}
+                ${r.claimed ? "disabled":""}>
+                ${r.claimed ? "Claimed":"Claim"}
             </button>
         </div>`;
     });
@@ -372,25 +386,28 @@ function renderTasks(){
         list.innerHTML += `
         <div class="task">
             <span>${t.name} (+${t.coins})</span>
-            <input type="checkbox" ${t.done?"checked":""} onchange="toggleTask(${i})">
+            <input type="checkbox" ${t.done?"checked":""}
+                onchange="toggleTask(${i})">
         </div>`;
     });
 }
 
-/* UI UPDATE */
+/* UI */
 function updateUI(){
     document.getElementById("available").innerText = data.available;
     document.getElementById("weekly").innerText = data.weekly;
-    document.getElementById("userNameDisplay").innerText = data.user;
-
+    document.getElementById("userDisplay").innerText = data.user;
     document.getElementById("streak").innerText = getStreak();
 
     let reserved = 0;
-    data.rewards.forEach(r=>{
-        if(!r.claimed) reserved += r.cost;
+    data.selectedRewards.forEach(i=>{
+        if(data.rewards[i] && !data.rewards[i].claimed){
+            reserved += data.rewards[i].cost;
+        }
     });
 
-    document.getElementById("usable").innerText = data.available - reserved;
+    document.getElementById("usable").innerText =
+        data.available - reserved;
 }
 
 /* INIT */
