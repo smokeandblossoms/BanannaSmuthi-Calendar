@@ -27,19 +27,6 @@ header{
     text-align:center;
 }
 
-/* CHARACTERS */
-.top-characters{
-    display:flex;
-    justify-content:center;
-    gap:20px;
-    padding:10px;
-    background:#fffdf7cc;
-}
-
-.top-characters img{
-    height:90px;
-}
-
 /* MONTH TITLE */
 #monthLabel{
     font-size:32px;
@@ -86,22 +73,22 @@ header{
     background: rgba(255,255,255,0.6);
 }
 
-/* COIN GLITTER EFFECT */
+/* ⭐ COIN GLITTER ANIMATION (FIXED) */
 @keyframes coinGlowBurst {
     0% {
         transform: scale(1);
-        filter: drop-shadow(0 0 0 rgba(255,215,0,0));
+        text-shadow: 0 0 0 rgba(255,215,0,0);
     }
     40% {
-        transform: scale(1.3);
-        filter:
-            drop-shadow(0 0 6px gold)
-            drop-shadow(0 0 12px white)
-            drop-shadow(0 0 18px gold);
+        transform: scale(1.4);
+        text-shadow:
+            0 0 6px gold,
+            0 0 12px white,
+            0 0 18px gold;
     }
     100% {
         transform: scale(1);
-        filter: drop-shadow(0 0 0 rgba(255,215,0,0));
+        text-shadow: 0 0 0 rgba(255,215,0,0);
     }
 }
 
@@ -171,10 +158,7 @@ input{
 <body>
 
 <header>
-<h2>
-  <img src="https://www.pngall.com/wp-content/uploads/15/Ponyo-PNG-File.png" style="height:28px; vertical-align:middle;">
-  The BanannaSmuthi Calendar
-</h2>
+<h2>The BanannaSmuthi Calendar</h2>
 </header>
 
 <h3 id="monthLabel"></h3>
@@ -195,30 +179,13 @@ input{
 🔥 Streak: <span id="streak">0</span>
 </div>
 
-<h3 id="selectedDay">Select a day</h3>
-
-<h3>👤 User</h3>
-<input id="userName" placeholder="Your name">
-<input type="color" id="userColor" value="#7c9a6d">
-<button onclick="setUser()">Set User</button>
-<p>Current: <span id="currentUser">me</span></p>
-
-<hr>
+<h3 id="selectedDay"></h3>
 
 <input id="taskInput" placeholder="New task...">
 <input id="coinInput" type="number" placeholder="Coin value">
 <button onclick="addTask()">Add Task</button>
 
 <div id="taskList"></div>
-
-<hr>
-
-<h3>🎁 Rewards</h3>
-<input id="rewardName" placeholder="Reward name">
-<input id="rewardCost" type="number" placeholder="Cost">
-<button onclick="addReward()">Add Reward</button>
-
-<div id="rewardList"></div>
 
 </div>
 </div>
@@ -229,10 +196,7 @@ let today = new Date();
 let selectedDay = null;
 
 let data = JSON.parse(localStorage.getItem("cozyData")) || {
-    users:{},
-    currentUser:"me",
     tasks:{},
-    rewards:[],
     coins:0,
     lifetime:0
 };
@@ -241,34 +205,20 @@ function save(){
     localStorage.setItem("cozyData", JSON.stringify(data));
 }
 
-/* USER */
-function setUser(){
-    let name = document.getElementById("userName").value;
-    let color = document.getElementById("userColor").value;
-    if(!name) return;
-
-    data.currentUser = name;
-
-    if(!data.users[name]){
-        data.users[name] = { color };
-    }
-
-    document.getElementById("currentUser").innerText = name;
-    save();
-}
-
-/* COIN ANIMATION */
+/* ⭐ COIN ANIMATION (FIXED TIMING) */
 function animateCoin(key){
-    const el = document.getElementById(`coin-${key}`);
-    if(!el) return;
+    requestAnimationFrame(() => {
+        const el = document.getElementById(`coin-${key}`);
+        if(!el) return;
 
-    el.classList.remove("animate");
-    void el.offsetWidth;
-    el.classList.add("animate");
-
-    setTimeout(()=>{
         el.classList.remove("animate");
-    }, 650);
+        void el.offsetWidth;
+        el.classList.add("animate");
+
+        setTimeout(() => {
+            el.classList.remove("animate");
+        }, 650);
+    });
 }
 
 /* CALENDAR */
@@ -303,7 +253,7 @@ function buildCalendar(){
     }
 }
 
-/* OPEN / CLOSE */
+/* OPEN DAY */
 function openDay(key, day){
     selectedDay = key;
 
@@ -322,58 +272,26 @@ function closeSidebar(){
 function addTask(){
     if(!selectedDay) return;
 
-    let nameInput = document.getElementById("taskInput");
-    let coinInput = document.getElementById("coinInput");
-
-    let name = nameInput.value;
-    let coins = parseInt(coinInput.value) || 0;
+    let name = document.getElementById("taskInput").value;
+    let coins = parseInt(document.getElementById("coinInput").value) || 0;
 
     if(!data.tasks[selectedDay]){
         data.tasks[selectedDay] = {items:[]};
     }
 
-    let user = data.users[data.currentUser] || {color:"#7c9a6d"};
-
     data.tasks[selectedDay].items.push({
         name,
         coins,
-        done:false,
-        user:data.currentUser,
-        color:user.color
+        done:false
     });
 
     save();
     renderTasks();
     buildCalendar();
     updateCoins();
-
-    nameInput.value = "";
-    coinInput.value = "";
-    nameInput.focus();
 }
 
-function renderTasks(){
-    let list = document.getElementById("taskList");
-    list.innerHTML = "";
-
-    let day = data.tasks[selectedDay];
-    if(!day) return;
-
-    day.items.forEach((t,i)=>{
-        list.innerHTML += `
-        <div class="task ${t.done?'done':''}" style="border-left:6px solid ${t.color}">
-            <span><b style="color:${t.color}">${t.user}</b>: ${t.name} (+${t.coins})</span>
-            <div>
-                <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${i})">
-                <button onclick="deleteTask(${i})">🗑</button>
-            </div>
-        </div>`;
-    });
-
-    updateCoins();
-}
-
-/* TOGGLE TASK */
+/* ⭐ FIXED TOGGLE (IMPORTANT) */
 function toggleTask(i){
     let t = data.tasks[selectedDay].items[i];
     let key = selectedDay;
@@ -389,103 +307,45 @@ function toggleTask(i){
     }
 
     save();
+
     renderTasks();
     buildCalendar();
     updateCoins();
 
     if(t.done){
-        animateCoin(key);
+        setTimeout(() => {
+            animateCoin(key);
+        }, 50);
     }
 }
 
-/* DELETE TASK */
-function deleteTask(i){
-    let t = data.tasks[selectedDay].items[i];
-
-    if(t.done){
-        data.coins -= t.coins;
-        data.lifetime -= t.coins;
-    }
-
-    data.tasks[selectedDay].items.splice(i,1);
-
-    save();
-    renderTasks();
-    buildCalendar();
-    updateCoins();
-}
-
-/* REWARDS */
-function addReward(){
-    let name = document.getElementById("rewardName").value;
-    let cost = parseInt(document.getElementById("rewardCost").value);
-
-    let user = data.users[data.currentUser] || {color:"#7c9a6d"};
-
-    data.rewards.push({
-        name,
-        cost,
-        user:data.currentUser,
-        color:user.color
-    });
-
-    save();
-    renderRewards();
-}
-
-function renderRewards(){
-    let list = document.getElementById("rewardList");
+/* RENDER TASKS */
+function renderTasks(){
+    let list = document.getElementById("taskList");
     list.innerHTML = "";
 
-    data.rewards.forEach((r,i)=>{
+    let day = data.tasks[selectedDay];
+    if(!day) return;
+
+    day.items.forEach((t,i)=>{
         list.innerHTML += `
-        <div class="task" style="border-left:6px solid ${r.color}">
-            <span><b style="color:${r.color}">${r.user}</b>: ${r.name} - 🪙${r.cost}</span>
-            <button onclick="deleteReward(${i})">🗑</button>
+        <div>
+            <span>${t.name} (+${t.coins})</span>
+            <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${i})">
         </div>`;
     });
+
+    updateCoins();
 }
 
-function deleteReward(i){
-    data.rewards.splice(i,1);
-    save();
-    renderRewards();
-}
-
-/* COINS + STREAK */
+/* COINS */
 function updateCoins(){
     document.getElementById("coins").innerText = data.coins;
     document.getElementById("lifeCoins").innerText = data.lifetime;
-    document.getElementById("streak").innerText = getStreak();
-}
-
-function formatKey(d){
-    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-}
-
-function hasTasks(key){
-    let d = data.tasks[key];
-    if(!d) return false;
-    return d.items.some(t=>t.done);
-}
-
-function getStreak(){
-    let s=0;
-    let d=new Date();
-
-    while(true){
-        let k=formatKey(d);
-        if(hasTasks(k)){
-            s++;
-            d.setDate(d.getDate()-1);
-        } else break;
-    }
-    return s;
 }
 
 /* INIT */
 buildCalendar();
-renderRewards();
 updateCoins();
 
 </script>
