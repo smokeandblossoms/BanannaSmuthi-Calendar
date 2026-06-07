@@ -15,6 +15,16 @@ body{
     background-repeat: no-repeat;
     background-attachment: fixed;
     color:#2f2f2f;
+
+    <div class="encouragement-note">
+    <div class="paper-pin">📌</div>
+    <p>
+        I am so proud of you!!! 💛<br><br>
+        Remember to take breaks please and have fun.<br><br>
+        You're amazing! 🌸
+    </p>
+</div>
+    
 }
 
 header{
@@ -255,6 +265,50 @@ input{
         min-height:58px;
         padding:7px;
     }
+}
+
+
+.encouragement-note{
+    width:min(420px, 90%);
+    margin:40px auto 30px auto;
+    background:#fff8dc;
+    padding:22px;
+    border-radius:4px;
+    box-shadow:
+        0 4px 10px rgba(0,0,0,0.15),
+        inset 0 0 20px rgba(255,255,255,0.4);
+    position:relative;
+    transform:rotate(-1deg);
+    font-family:"Comic Sans MS", cursive, sans-serif;
+    color:#5a4a3a;
+    line-height:1.6;
+    text-align:center;
+    border:1px solid #e6d7a8;
+}
+
+.encouragement-note::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:14px;
+    background:
+        repeating-linear-gradient(
+            -45deg,
+            rgba(255,255,255,0.25),
+            rgba(255,255,255,0.25) 8px,
+            transparent 8px,
+            transparent 16px
+        );
+}
+
+.paper-pin{
+    position:absolute;
+    top:-12px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:24px;
 }
 </style>
 </head>
