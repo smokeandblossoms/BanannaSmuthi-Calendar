@@ -12,10 +12,11 @@ body{
     background-image: url("https://i.pinimg.com/736x/3f/4a/94/3f4a9446596e53d3d82814bf6c042e0d.jpg");
     background-size: cover;
     background-position: center;
+    background-repeat: no-repeat;
     background-attachment: fixed;
+    color:#2f2f2f;
 }
 
-/* HEADER */
 header{
     background:#7c9a6d;
     color:white;
@@ -23,32 +24,43 @@ header{
     text-align:center;
 }
 
-/* STREAK ONLY UNDER TITLE */
-#streakBox{
-    text-align:center;
-    font-size:18px;
-    font-weight:bold;
+header h2{
+    margin:0 0 8px 0;
+}
+
+.name-row{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+}
+
+.name-row input{
+    width:220px;
+    max-width:80%;
+}
+
+#monthLabel{
+    font-size:32px;
     color:white;
-    margin-bottom:10px;
+    text-align:center;
+    font-weight:bold;
+    margin:10px 0;
     text-shadow:0 2px 6px rgba(0,0,0,0.3);
 }
 
-/* MONTH */
-#monthLabel{
-    font-size:28px;
+.month-controls{
     text-align:center;
-    color:white;
-    font-weight:bold;
-    margin:10px 0;
+    margin-bottom:8px;
 }
 
-/* LAYOUT */
 .container{
     display:flex;
-    height:calc(100vh - 200px);
+    min-height:calc(100vh - 210px);
+    justify-content:center;
 }
 
-/* CALENDAR */
 .calendar{
     flex:2;
     padding:20px;
@@ -60,63 +72,115 @@ header{
     gap:8px;
 }
 
-/* DAY */
-.day{
-    background: rgba(255,255,255,0.5);
-    padding:10px;
-    border-radius:10px;
-    cursor:pointer;
-    min-height:60px;
+.weekday{
+    text-align:center;
+    color:white;
+    font-weight:bold;
+    text-shadow:0 2px 5px rgba(0,0,0,0.35);
 }
 
-/* COIN */
-.coin-glitter{
-    display:inline-block;
+.day{
+    background: rgba(255,255,255,0.5);
+    border-radius:10px;
+    padding:10px;
+    min-height:78px;
+    cursor:pointer;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+    font-size:14px;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(8px);
 }
-.coin-glitter.animate{
+
+.day:hover{
+    background: rgba(255,255,255,0.66);
+}
+
+.day.selected{
+    outline:3px solid #7c9a6d;
+    background: rgba(255,255,255,0.75);
+}
+
+.day-number{
+    font-weight:bold;
+    font-size:16px;
+}
+
+.day small{
+    display:block;
+    margin-top:6px;
+}
+
+.has-completed{
+    border:2px solid rgba(124,154,109,0.8);
+}
+
+@keyframes coinGlowBurst {
+    0% { transform: scale(1); text-shadow: 0 0 0 rgba(255,215,0,0); }
+    40% { transform: scale(1.4); text-shadow: 0 0 6px gold, 0 0 12px white, 0 0 18px gold; }
+    100% { transform: scale(1); text-shadow: 0 0 0 rgba(255,215,0,0); }
+}
+
+.coin-glitter {
+    display: inline-block;
+}
+
+.coin-glitter.animate {
     animation: coinGlowBurst 600ms ease-out;
 }
 
-@keyframes coinGlowBurst{
-    0%{transform:scale(1);}
-    40%{transform:scale(1.4); text-shadow:0 0 10px gold;}
-    100%{transform:scale(1);}
-}
-
-/* SIDEBAR */
 .sidebar{
     flex:1;
-    background:#fffdf7cc;
+    min-width:300px;
+    max-width:420px;
+    background:#fffdf7dd;
+    border-left:2px solid #e6dfd2;
     padding:15px;
     overflow:auto;
 }
-.sidebar.hidden{display:none;}
 
-/* TASK */
-.task{
+.sidebar.hidden{
+    display:none;
+}
+
+.panel{
+    background:rgba(255,255,255,0.7);
+    border-radius:10px;
+    padding:10px;
+    margin:10px 0;
+    border:1px solid rgba(230,223,210,0.9);
+}
+
+.coins{
+    background:#fff3c4cc;
+    padding:10px;
+    border-radius:8px;
+    margin-bottom:10px;
+    line-height:1.7;
+}
+
+.task, .reward{
     display:flex;
     justify-content:space-between;
-    margin:6px 0;
+    gap:10px;
+    margin:8px 0;
+    padding:8px;
+    border-bottom:1px solid #eee;
+    align-items:center;
 }
 
-/* REWARD */
-.reward{
-    display:flex;
-    justify-content:space-between;
-    margin:6px 0;
-    padding:6px;
-    background:white;
-    border-radius:6px;
+.task.done span{
+    text-decoration:line-through;
+    color:green;
 }
 
-/* INPUT */
-input{
-    width:100%;
-    padding:6px;
-    margin:5px 0;
+.task span, .reward span{
+    overflow-wrap:anywhere;
 }
 
-/* BUTTON */
+.reward.redeemed{
+    opacity:0.55;
+}
+
 button{
     background:#7c9a6d;
     color:white;
@@ -124,6 +188,63 @@ button{
     padding:6px 10px;
     border-radius:6px;
     cursor:pointer;
+    margin-top:5px;
+}
+
+button:hover{
+    filter:brightness(0.95);
+}
+
+button.danger{
+    background:#aa6d6d;
+}
+
+button.small{
+    padding:4px 7px;
+    font-size:12px;
+}
+
+button:disabled{
+    background:#aaa;
+    cursor:not-allowed;
+}
+
+input{
+    width:100%;
+    box-sizing:border-box;
+    padding:6px;
+    margin:5px 0;
+    border:1px solid #d8d0c0;
+    border-radius:6px;
+}
+
+input[type="checkbox"]{
+    width:auto;
+    transform:scale(1.15);
+}
+
+.empty-note{
+    font-style:italic;
+    opacity:0.75;
+}
+
+@media(max-width:800px){
+    .container{
+        flex-direction:column;
+    }
+    .sidebar{
+        max-width:none;
+        border-left:none;
+        border-top:2px solid #e6dfd2;
+    }
+    .grid{
+        gap:5px;
+    }
+    .day{
+        min-height:65px;
+        padding:7px;
+        font-size:12px;
+    }
 }
 </style>
 </head>
@@ -131,134 +252,307 @@ button{
 <body>
 
 <header>
-<h2>The BanannaSmuthi Calendar</h2>
+    <h2 id="appTitle">The BanannaSmuthi Calendar</h2>
+    <div class="name-row">
+        <span>Your name:</span>
+        <input id="nameInput" placeholder="Enter your name...">
+        <button onclick="saveName()">Save Name</button>
+    </div>
 </header>
-
-<!-- 🔥 ONLY STREAK SHOWN HERE -->
-<div id="streakBox">
-🔥 Streak: <span id="streak">0</span>
-</div>
 
 <h3 id="monthLabel"></h3>
 
+<div class="month-controls">
+    <button onclick="changeMonth(-1)">← Previous</button>
+    <button onclick="goToCurrentMonth()">Current Month</button>
+    <button onclick="changeMonth(1)">Next →</button>
+</div>
+
 <div class="container">
 
-<!-- CALENDAR -->
 <div class="calendar">
     <div class="grid" id="calendar"></div>
 </div>
 
-<!-- SIDEBAR -->
 <div class="sidebar hidden" id="sidebar">
 
 <button onclick="closeSidebar()">← Close</button>
 
 <h3 id="selectedDay"></h3>
 
-<!-- 👤 USER -->
-<h4>👤 Name</h4>
-<input id="nameInput" placeholder="Enter name">
-<button onclick="setName()">Set Name</button>
+<div class="coins">
+    👤 <strong id="welcomeName">Welcome!</strong><br>
+    🪙 Available Points to Use: <span id="availableCoins">0</span><br>
+    🌞 Daily Coins: <span id="dailyCoins">0</span><br>
+    📅 Weekly Coins: <span id="weeklyCoins">0</span><br>
+    🏆 Lifetime Coins: <span id="lifeCoins">0</span><br>
+    🔥 Daily Streak: <span id="streak">0</span>
+</div>
 
-<hr>
+<div class="panel">
+    <h3>Tasks</h3>
+    <input id="taskInput" placeholder="New task...">
+    <input id="coinInput" type="number" min="0" placeholder="Coin value">
+    <button onclick="addTask()">Add Task</button>
+    <div id="taskList"></div>
+</div>
 
-<!-- TASKS -->
-<input id="taskInput" placeholder="New task...">
-<input id="coinInput" type="number" placeholder="Coin value">
-<button onclick="addTask()">Add Task</button>
+<div class="panel">
+    <h3>Rewards</h3>
+    <p class="empty-note">Rewards are global and disappear after you redeem them.</p>
+    <div id="rewardList"></div>
 
-<div id="taskList"></div>
-
-<hr>
-
-<!-- REWARDS -->
-<h3>🎁 Rewards</h3>
-<div id="rewardList"></div>
+    <h4>Add Reward</h4>
+    <input id="rewardInput" placeholder="Reward name...">
+    <input id="rewardCostInput" type="number" min="0" placeholder="Reward cost">
+    <button onclick="addReward()">Add Reward</button>
+</div>
 
 </div>
 </div>
 
 <script>
-
 let today = new Date();
+let visibleDate = new Date(today.getFullYear(), today.getMonth(), 1);
 let selectedDay = null;
 
-let data = JSON.parse(localStorage.getItem("cozyData")) || {
+let data = JSON.parse(localStorage.getItem("cozyDataV2")) || {
+    userName:"",
     tasks:{},
+    rewards:[],
     coins:0,
     lifetime:0,
-    user:"Guest",
-    rewards:[],
-    selectedRewards:[]
+    redeemedRewards:[]
 };
 
-function save(){
-    localStorage.setItem("cozyData", JSON.stringify(data));
+// Migration from older saved version, if present.
+if(!localStorage.getItem("cozyDataV2")){
+    const oldData = JSON.parse(localStorage.getItem("cozyData") || "null");
+    if(oldData){
+        data.tasks = oldData.tasks || {};
+        data.coins = oldData.coins || 0;
+        data.lifetime = oldData.lifetime || 0;
+    }
 }
 
-/* 👤 USER */
-function setName(){
-    let n = document.getElementById("nameInput").value;
-    if(!n) return;
-    data.user = n;
+function save(){
+    localStorage.setItem("cozyDataV2", JSON.stringify(data));
+}
+
+function dateKey(date){
+    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+}
+
+function parseKey(key){
+    const parts = key.split("-").map(Number);
+    return new Date(parts[0], parts[1], parts[2]);
+}
+
+function prettyDate(key){
+    return parseKey(key).toLocaleDateString(undefined, {
+        weekday:"long",
+        month:"long",
+        day:"numeric",
+        year:"numeric"
+    });
+}
+
+function startOfDay(date){
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function getMonday(date){
+    const d = startOfDay(date);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    return d;
+}
+
+function getSunday(date){
+    const monday = getMonday(date);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return sunday;
+}
+
+function getDayCoins(key){
+    const items = data.tasks[key]?.items || [];
+    return items.filter(t => t.done).reduce((sum, t) => sum + Number(t.coins || 0), 0);
+}
+
+function dayHasCompletedTask(key){
+    return (data.tasks[key]?.items || []).some(t => t.done);
+}
+
+function getWeeklyCoins(referenceDate = today){
+    const monday = getMonday(referenceDate);
+    const sunday = getSunday(referenceDate);
+    let total = 0;
+
+    Object.keys(data.tasks).forEach(key => {
+        const d = parseKey(key);
+        if(d >= monday && d <= sunday){
+            total += getDayCoins(key);
+        }
+    });
+
+    return total;
+}
+
+function getCompletedDayKeysThroughToday(){
+    const end = startOfDay(today);
+    return Object.keys(data.tasks)
+        .filter(key => {
+            const d = parseKey(key);
+            return d <= end && dayHasCompletedTask(key);
+        })
+        .sort((a,b) => parseKey(a) - parseKey(b));
+}
+
+function calculateStreak(){
+    let streak = 0;
+    let cursor = startOfDay(today);
+
+    while(true){
+        const key = dateKey(cursor);
+        if(dayHasCompletedTask(key)){
+            streak++;
+            cursor.setDate(cursor.getDate() - 1);
+        } else {
+            break;
+        }
+    }
+
+    return streak;
+}
+
+function recalculateCoinTotals(){
+    let lifetime = 0;
+    Object.keys(data.tasks).forEach(key => {
+        lifetime += getDayCoins(key);
+    });
+
+    const redeemedTotal = (data.redeemedRewards || [])
+        .reduce((sum, reward) => sum + Number(reward.cost || 0), 0);
+
+    data.lifetime = lifetime;
+    data.coins = Math.max(0, lifetime - redeemedTotal);
     save();
 }
 
-/* CALENDAR */
+function saveName(){
+    const name = document.getElementById("nameInput").value.trim();
+    data.userName = name;
+    save();
+    updateNameDisplay();
+}
+
+function updateNameDisplay(){
+    const name = data.userName || "friend";
+    document.getElementById("nameInput").value = data.userName || "";
+    document.getElementById("welcomeName").innerText = `Welcome, ${name}!`;
+    document.getElementById("appTitle").innerText = data.userName
+        ? `${data.userName}'s BanannaSmuthi Calendar`
+        : "The BanannaSmuthi Calendar";
+}
+
+function animateCoin(key){
+    requestAnimationFrame(() => {
+        const el = document.getElementById(`coin-${key}`);
+        if(!el) return;
+
+        el.classList.remove("animate");
+        void el.offsetWidth;
+        el.classList.add("animate");
+
+        setTimeout(() => {
+            el.classList.remove("animate");
+        }, 650);
+    });
+}
+
 function buildCalendar(){
-    let cal = document.getElementById("calendar");
+    recalculateCoinTotals();
+
+    const cal = document.getElementById("calendar");
     cal.innerHTML = "";
 
-    let y = today.getFullYear();
-    let m = today.getMonth();
+    const y = visibleDate.getFullYear();
+    const m = visibleDate.getMonth();
 
     document.getElementById("monthLabel").innerText =
-        today.toLocaleString('default',{month:'long'}) + " " + y;
+        visibleDate.toLocaleString('default',{month:'long'}) + " " + y;
 
-    let first = new Date(y,m,1).getDay();
-    let days = new Date(y,m+1,0).getDate();
+    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    weekdays.forEach(day => {
+        cal.innerHTML += `<div class="weekday">${day}</div>`;
+    });
+
+    const first = new Date(y,m,1).getDay();
+    const days = new Date(y,m+1,0).getDate();
 
     for(let i=0;i<first;i++){
         cal.innerHTML += `<div></div>`;
     }
 
     for(let d=1; d<=days; d++){
-        let key = `${y}-${m}-${d}`;
-
-        let coins = data.tasks[key]?.items
-            ?.filter(t=>t.done)
-            ?.reduce((a,b)=>a+b.coins,0) || 0;
+        const key = `${y}-${m}-${d}`;
+        const coins = getDayCoins(key);
+        const completedClass = dayHasCompletedTask(key) ? "has-completed" : "";
+        const selectedClass = selectedDay === key ? "selected" : "";
 
         cal.innerHTML += `
-        <div class="day" onclick="openDay('${key}',${d})">
-            ${d}
+        <div class="day ${completedClass} ${selectedClass}" onclick="openDay('${key}',${d})">
+            <div class="day-number">${d}</div>
             <small class="coin-glitter" id="coin-${key}">🪙 ${coins}</small>
+            ${dayHasCompletedTask(key) ? `<small>✅ Completed</small>` : ``}
         </div>`;
     }
+
+    updateCoins();
 }
 
-/* OPEN DAY */
+function changeMonth(amount){
+    visibleDate.setMonth(visibleDate.getMonth() + amount);
+    buildCalendar();
+}
+
+function goToCurrentMonth(){
+    visibleDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    buildCalendar();
+}
+
 function openDay(key, day){
     selectedDay = key;
     document.getElementById("sidebar").classList.remove("hidden");
-    document.getElementById("selectedDay").innerText = "Day " + day;
-
+    document.getElementById("selectedDay").innerText = prettyDate(key);
     renderTasks();
     renderRewards();
+    buildCalendar();
 }
 
-/* CLOSE */
 function closeSidebar(){
     document.getElementById("sidebar").classList.add("hidden");
+    selectedDay = null;
+    buildCalendar();
 }
 
-/* TASKS */
 function addTask(){
-    let name = document.getElementById("taskInput").value;
-    let coins = parseInt(document.getElementById("coinInput").value)||0;
+    if(!selectedDay) return;
+
+    const nameInput = document.getElementById("taskInput");
+    const coinInput = document.getElementById("coinInput");
+    const name = nameInput.value.trim();
+    const coins = parseInt(coinInput.value) || 0;
+
+    if(!name){
+        alert("Please enter a task name.");
+        return;
+    }
 
     if(!data.tasks[selectedDay]){
-        data.tasks[selectedDay]={items:[]};
+        data.tasks[selectedDay] = {items:[]};
     }
 
     data.tasks[selectedDay].items.push({
@@ -267,123 +561,164 @@ function addTask(){
         done:false
     });
 
+    nameInput.value = "";
+    coinInput.value = "";
+
     save();
     renderTasks();
     buildCalendar();
 }
 
-/* TOGGLE TASK */
+function deleteTask(i){
+    if(!selectedDay || !data.tasks[selectedDay]) return;
+    data.tasks[selectedDay].items.splice(i, 1);
+    save();
+    renderTasks();
+    buildCalendar();
+}
+
 function toggleTask(i){
-    let t = data.tasks[selectedDay].items[i];
+    const t = data.tasks[selectedDay].items[i];
+    const key = selectedDay;
     t.done = !t.done;
 
-    if(t.done){
-        data.coins += t.coins;
-        data.lifetime += t.coins;
-    } else {
-        data.coins -= t.coins;
-        data.lifetime -= t.coins;
-    }
-
     save();
     renderTasks();
     buildCalendar();
-    updateStreak();
 
-    animateCoin(selectedDay);
+    if(t.done){
+        setTimeout(() => animateCoin(key), 50);
+    }
 }
 
-/* ANIMATION */
-function animateCoin(key){
-    const el = document.getElementById(`coin-${key}`);
-    if(!el) return;
-
-    el.classList.remove("animate");
-    void el.offsetWidth;
-    el.classList.add("animate");
-
-    setTimeout(()=>el.classList.remove("animate"),600);
-}
-
-/* TASK RENDER */
 function renderTasks(){
-    let list = document.getElementById("taskList");
+    const list = document.getElementById("taskList");
     list.innerHTML = "";
 
-    let day = data.tasks[selectedDay];
-    if(!day) return;
+    const day = data.tasks[selectedDay];
+    if(!day || day.items.length === 0){
+        list.innerHTML = `<p class="empty-note">No tasks yet for this day.</p>`;
+        updateCoins();
+        return;
+    }
 
     day.items.forEach((t,i)=>{
         list.innerHTML += `
-        <div class="task">
-            ${t.name} (+${t.coins})
-            <input type="checkbox" ${t.done?"checked":""}
-            onchange="toggleTask(${i})">
+        <div class="task ${t.done ? 'done' : ''}">
+            <span>${escapeHtml(t.name)} (+${Number(t.coins || 0)})</span>
+            <div>
+                <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${i})">
+                <button class="danger small" onclick="deleteTask(${i})">Delete</button>
+            </div>
         </div>`;
     });
+
+    updateCoins();
 }
 
-/* 🔥 STREAK LOGIC (RESET IF ANY DAY MISSED) */
-function getStreak(){
-    let y = today.getFullYear();
-    let m = today.getMonth();
+function addReward(){
+    const rewardInput = document.getElementById("rewardInput");
+    const rewardCostInput = document.getElementById("rewardCostInput");
+    const name = rewardInput.value.trim();
+    const cost = parseInt(rewardCostInput.value) || 0;
 
-    let days = new Date(y,m+1,0).getDate();
-
-    let streak = 0;
-
-    for(let d=1; d<=days; d++){
-        let key = `${y}-${m}-${d}`;
-
-        let done = data.tasks[key]?.items?.some(t=>t.done);
-
-        if(done){
-            streak++;
-        } else {
-            streak = 0; // RESET ON GAP
-        }
+    if(!name){
+        alert("Please enter a reward name.");
+        return;
     }
 
-    return streak;
+    data.rewards.push({
+        id: Date.now().toString(),
+        name,
+        cost
+    });
+
+    rewardInput.value = "";
+    rewardCostInput.value = "";
+
+    save();
+    renderRewards();
+    updateCoins();
 }
 
-function updateStreak(){
-    document.getElementById("streak").innerText = getStreak();
+function redeemReward(id){
+    const reward = data.rewards.find(r => r.id === id);
+    if(!reward) return;
+
+    recalculateCoinTotals();
+
+    if(data.coins < reward.cost){
+        alert("You do not have enough available points for this reward yet.");
+        return;
+    }
+
+    const confirmRedeem = confirm(`Redeem "${reward.name}" for ${reward.cost} points? This reward will disappear after redemption.`);
+    if(!confirmRedeem) return;
+
+    data.redeemedRewards.push({
+        ...reward,
+        redeemedOn: dateKey(today)
+    });
+
+    data.rewards = data.rewards.filter(r => r.id !== id);
+    save();
+    recalculateCoinTotals();
+    renderRewards();
+    updateCoins();
+    buildCalendar();
 }
 
-/* REWARDS */
-function toggleReward(i){
-    let idx = data.selectedRewards.indexOf(i);
-
-    if(idx === -1) data.selectedRewards.push(i);
-    else data.selectedRewards.splice(idx,1);
+function deleteReward(id){
+    data.rewards = data.rewards.filter(r => r.id !== id);
+    save();
+    renderRewards();
 }
 
-/* REWARD RENDER */
 function renderRewards(){
-    let r = document.getElementById("rewardList");
-    r.innerHTML = "";
+    const list = document.getElementById("rewardList");
+    list.innerHTML = "";
 
-    data.rewards.forEach((x,i)=>{
+    if(!data.rewards || data.rewards.length === 0){
+        list.innerHTML = `<p class="empty-note">No rewards yet. Add one below.</p>`;
+        return;
+    }
 
-        let checked = data.selectedRewards.includes(i);
+    recalculateCoinTotals();
 
-        r.innerHTML += `
+    data.rewards.forEach(reward => {
+        const canAfford = data.coins >= reward.cost;
+        list.innerHTML += `
         <div class="reward">
-            <label>
-                <input type="checkbox"
-                onchange="toggleReward(${i})"
-                ${checked?"checked":""}>
-                ${x.name} - ${x.cost}
-            </label>
+            <span>🎁 ${escapeHtml(reward.name)} <strong>(${Number(reward.cost || 0)} points)</strong></span>
+            <div>
+                <button class="small" onclick="redeemReward('${reward.id}')" ${canAfford ? '' : 'disabled'}>Redeem</button>
+                <button class="danger small" onclick="deleteReward('${reward.id}')">Delete</button>
+            </div>
         </div>`;
     });
 }
 
-/* INIT */
-buildCalendar();
-updateStreak();
+function updateCoins(){
+    recalculateCoinTotals();
 
+    const currentDayCoins = selectedDay ? getDayCoins(selectedDay) : 0;
+
+    document.getElementById("availableCoins").innerText = data.coins;
+    document.getElementById("dailyCoins").innerText = currentDayCoins;
+    document.getElementById("weeklyCoins").innerText = getWeeklyCoins(today);
+    document.getElementById("lifeCoins").innerText = data.lifetime;
+    document.getElementById("streak").innerText = calculateStreak();
+}
+
+function escapeHtml(text){
+    const div = document.createElement("div");
+    div.innerText = text;
+    return div.innerHTML;
+}
+
+updateNameDisplay();
+buildCalendar();
+updateCoins();
 </script>
 
 </body>
