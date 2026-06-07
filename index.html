@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The BanannaSmuthi Calendar</title>
+
+<style>
+body{
+    margin:0;
+    font-family: Arial, sans-serif;
+
+    background-image: url("https://i.pinimg.com/736x/3f/4a/94/3f4a9446596e53d3d82814bf6c042e0d.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+
+    color:#2f2f2f;
+}
+
+/* HEADER */
+header{
+    background:#7c9a6d;
+    color:white;
+    padding:15px;
+    text-align:center;
+}
+
+/* CHARACTERS */
+.top-characters{
+    display:flex;
+    justify-content:center;
+    gap:20px;
+    padding:10px;
+    background:#fffdf7cc;
+}
+
+.top-characters img{
+    height:90px;
+}
+
+/* MONTH TITLE */
+#monthLabel{
+    font-size:32px;
+    color:white;
+    text-align:center;
+    font-weight:bold;
+    margin:10px 0;
+    text-shadow:0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* LAYOUT */
+.container{
+    display:flex;
+    height:calc(100vh - 200px);
+    justify-content:center;
+}
+
+/* CALENDAR */
+.calendar{
+    flex:2;
+    padding:20px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:8px;
+}
+
+/* DAY TABS (GLASS EFFECT) */
+.day{
+    background: rgba(255,255,255,0.5);
+    border-radius:10px;
+    padding:10px;
+    min-height:60px;
+    cursor:pointer;
+    box-shadow:0 2px 5px rgba(0,0,0,0.1);
+    font-size:14px;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.day:hover{
+    background: rgba(255,255,255,0.6);
+}
+
+/* SIDEBAR */
+.sidebar{
+    flex:1;
+    background:#fffdf7cc;
+    border-left:2px solid #e6dfd2;
+    padding:15px;
+    overflow:auto;
+}
+
+/* HIDDEN SIDEBAR */
+.sidebar.hidden{
+    display:none;
+}
+
+/* TASKS */
+.task{
+    display:flex;
+    justify-content:space-between;
+    margin:8px 0;
+    padding:8px;
+    border-bottom:1px solid #eee;
+    align-items:center;
+}
+
+.task.done span{
+    text-decoration:line-through;
+    color:green;
+}
+
+/* BUTTONS */
+button{
+    background:#7c9a6d;
+    color:white;
+    border:none;
+    padding:6px 10px;
+    border-radius:6px;
+    cursor:pointer;
+    margin-top:5px;
+}
+
+input{
+    width:100%;
+    padding:6px;
+    margin:5px 0;
+}
+
+/* COINS BOX */
+.coins{
+    background:#fff3c4cc;
+    padding:10px;
+    border-radius:8px;
+    margin-bottom:10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h2>
+  <img src="https://www.pngall.com/wp-content/uploads/15/Ponyo-PNG-File.png" alt="icon" style="height:28px; vertical-align:middle;">
+  The BanannaSmuthi Calendar
+</h2>
+</header>
+
+<!-- MONTH -->
+<h3 id="monthLabel"></h3>
+
+<div class="container">
+
+<!-- CALENDAR -->
+<div class="calendar">
+    <div class="grid" id="calendar"></div>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar hidden" id="sidebar">
+
+<button onclick="closeSidebar()">← Close</button>
+
+<div class="coins">
+🪙 Weekly Coins: <span id="coins">0</span><br>
+🪙 Lifetime: <span id="lifeCoins">0</span><br>
+🔥 Streak: <span id="streak">0</span>
+</div>
+
+<h3 id="selectedDay">Select a day</h3>
+
+<h3>👤 User</h3>
+<input id="userName" placeholder="Your name">
+<input type="color" id="userColor" value="#7c9a6d">
+<button onclick="setUser()">Set User</button>
+<p>Current: <span id="currentUser">me</span></p>
+
+<hr>
+
+<input id="taskInput" placeholder="New task...">
+<input id="coinInput" type="number" placeholder="Coin value">
+<button onclick="addTask()">Add Task</button>
+
+<div id="taskList"></div>
+
+<hr>
+
+<h3>🎁 Rewards</h3>
+<input id="rewardName" placeholder="Reward name">
+<input id="rewardCost" type="number" placeholder="Cost">
+<button onclick="addReward()">Add Reward</button>
+
+<div id="rewardList"></div>
+
+</div>
+</div>
+
+<script>
+
+let today = new Date();
+let selectedDay = null;
+
+let data = JSON.parse(localStorage.getItem("cozyData")) || {
+    users:{},
+    currentUser:"me",
+    tasks:{},
+    rewards:[],
+    coins:0,
+    lifetime:0
+};
+
+function save(){
+    localStorage.setItem("cozyData", JSON.stringify(data));
+}
+
+/* USER */
+function setUser(){
+    let name = document.getElementById("userName").value;
+    let color = document.getElementById("userColor").value;
+    if(!name) return;
+
+    data.currentUser = name;
+
+    if(!data.users[name]){
+        data.users[name] = { color };
+    }
+
+    document.getElementById("currentUser").innerText = name;
+    save();
+}
+
+/* CALENDAR */
+function buildCalendar(){
+    let cal = document.getElementById("calendar");
+    cal.innerHTML = "";
+
+    let y = today.getFullYear();
+    let m = today.getMonth();
+
+    document.getElementById("monthLabel").innerText =
+        today.toLocaleString('default',{month:'long'}) + " " + y;
+
+    let first = new Date(y,m,1).getDay();
+    let days = new Date(y,m+1,0).getDate();
+
+    for(let i=0;i<first;i++){
+        cal.innerHTML += `<div></div>`;
+    }
+
+    for(let d=1; d<=days; d++){
+        let key = `${y}-${m}-${d}`;
+
+        let dayTasks = data.tasks[key]?.items || [];
+        let coins = dayTasks.filter(t=>t.done).reduce((a,b)=>a+b.coins,0);
+
+        cal.innerHTML += `
+        <div class="day" onclick="openDay('${key}',${d})">
+            ${d}
+            <small>🪙 ${coins}</small>
+        </div>`;
+    }
+}
+
+/* OPEN / CLOSE SIDEBAR */
+function openDay(key, day){
+    selectedDay = key;
+
+    document.getElementById("sidebar").classList.remove("hidden");
+    document.getElementById("selectedDay").innerText = "Day " + day;
+
+    renderTasks();
+}
+
+function closeSidebar(){
+    document.getElementById("sidebar").classList.add("hidden");
+    selectedDay = null;
+}
+
+/* TASKS */
+function addTask(){
+    if(!selectedDay) return;
+
+    let name = document.getElementById("taskInput").value;
+    let coins = parseInt(document.getElementById("coinInput").value)||0;
+
+    if(!data.tasks[selectedDay]){
+        data.tasks[selectedDay] = {items:[]};
+    }
+
+    let user = data.users[data.currentUser] || {color:"#7c9a6d"};
+
+    data.tasks[selectedDay].items.push({
+        name,
+        coins,
+        done:false,
+        user:data.currentUser,
+        color:user.color
+    });
+
+    save();
+    renderTasks();
+    buildCalendar();
+}
+
+function renderTasks(){
+    let list = document.getElementById("taskList");
+    list.innerHTML = "";
+
+    let day = data.tasks[selectedDay];
+    if(!day) return;
+
+    day.items.forEach((t,i)=>{
+        list.innerHTML += `
+        <div class="task ${t.done?'done':''}" style="border-left:6px solid ${t.color}">
+            <span><b style="color:${t.color}">${t.user}</b>: ${t.name} (+${t.coins})</span>
+            <div>
+                <input type="checkbox" ${t.done?'checked':''} onchange="toggleTask(${i})">
+                <button onclick="deleteTask(${i})">🗑</button>
+            </div>
+        </div>`;
+    });
+
+    updateCoins();
+}
+
+function toggleTask(i){
+    let t = data.tasks[selectedDay].items[i];
+
+    t.done = !t.done;
+
+    if(t.done){
+        data.coins += t.coins;
+        data.lifetime += t.coins;
+    } else {
+        data.coins -= t.coins;
+        data.lifetime -= t.coins;
+    }
+
+    save();
+    renderTasks();
+    buildCalendar();
+    updateCoins();
+}
+
+function deleteTask(i){
+    let t = data.tasks[selectedDay].items[i];
+
+    if(t.done){
+        data.coins -= t.coins;
+        data.lifetime -= t.coins;
+    }
+
+    data.tasks[selectedDay].items.splice(i,1);
+
+    save();
+    renderTasks();
+    buildCalendar();
+    updateCoins();
+}
+
+/* REWARDS */
+function addReward(){
+    let name = document.getElementById("rewardName").value;
+    let cost = parseInt(document.getElementById("rewardCost").value);
+
+    let user = data.users[data.currentUser] || {color:"#7c9a6d"};
+
+    data.rewards.push({
+        name,
+        cost,
+        user:data.currentUser,
+        color:user.color
+    });
+
+    save();
+    renderRewards();
+}
+
+function renderRewards(){
+    let list = document.getElementById("rewardList");
+    list.innerHTML = "";
+
+    data.rewards.forEach((r,i)=>{
+        list.innerHTML += `
+        <div class="task" style="border-left:6px solid ${r.color}">
+            <span><b style="color:${r.color}">${r.user}</b>: ${r.name} - 🪙${r.cost}</span>
+            <button onclick="deleteReward(${i})">🗑</button>
+        </div>`;
+    });
+}
+
+function deleteReward(i){
+    data.rewards.splice(i,1);
+    save();
+    renderRewards();
+}
+
+/* COINS + STREAK */
+function updateCoins(){
+    document.getElementById("coins").innerText = data.coins;
+    document.getElementById("lifeCoins").innerText = data.lifetime;
+    document.getElementById("streak").innerText = getStreak();
+}
+
+function formatKey(d){
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function hasTasks(key){
+    let d = data.tasks[key];
+    if(!d) return false;
+    return d.items.some(t=>t.done);
+}
+
+function getStreak(){
+    let s=0;
+    let d=new Date();
+
+    while(true){
+        let k=formatKey(d);
+        if(hasTasks(k)){
+            s++;
+            d.setDate(d.getDate()-1);
+        } else break;
+    }
+    return s;
+}
+
+/* INIT */
+buildCalendar();
+renderRewards();
+updateCoins();
+
+</script>
+
+</body>
+</html>
