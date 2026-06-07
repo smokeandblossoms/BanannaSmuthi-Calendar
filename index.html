@@ -19,20 +19,6 @@ body{
     color:#2f2f2f;
 }
 
-/* ✨ SPARKLES */
-.sparkle{
-    position:absolute;
-    pointer-events:none;
-    font-size:14px;
-    animation: floatUp 0.8s ease-out forwards;
-    opacity:1;
-}
-
-@keyframes floatUp{
-    0%{ transform:translateY(0) scale(1); opacity:1; }
-    100%{ transform:translateY(-25px) scale(0.5); opacity:0; }
-}
-
 /* HEADER */
 header{
     background:#7c9a6d;
@@ -54,7 +40,7 @@ header{
     height:90px;
 }
 
-/* MONTH */
+/* MONTH TITLE */
 #monthLabel{
     font-size:32px;
     color:white;
@@ -83,9 +69,8 @@ header{
     gap:8px;
 }
 
-/* DAY */
+/* DAY TABS (GLASS EFFECT) */
 .day{
-    position:relative;
     background: rgba(255,255,255,0.5);
     border-radius:10px;
     padding:10px;
@@ -93,7 +78,12 @@ header{
     cursor:pointer;
     box-shadow:0 2px 5px rgba(0,0,0,0.1);
     font-size:14px;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.day:hover{
+    background: rgba(255,255,255,0.6);
 }
 
 /* SIDEBAR */
@@ -105,11 +95,12 @@ header{
     overflow:auto;
 }
 
+/* HIDDEN SIDEBAR */
 .sidebar.hidden{
     display:none;
 }
 
-/* TASK */
+/* TASKS */
 .task{
     display:flex;
     justify-content:space-between;
@@ -141,7 +132,7 @@ input{
     margin:5px 0;
 }
 
-/* COINS */
+/* COINS BOX */
 .coins{
     background:#fff3c4cc;
     padding:10px;
@@ -154,21 +145,23 @@ input{
 <body>
 
 <header>
-<h2>🌸 The BanannaSmuthi Calendar</h2>
+<h2>
+  <img src="https://www.pngall.com/wp-content/uploads/15/Ponyo-PNG-File.png" alt="icon" style="height:28px; vertical-align:middle;">
+  The BanannaSmuthi Calendar
+</h2>
 </header>
 
-<div class="top-characters">
-    <img src="https://www.pngall.com/wp-content/uploads/15/Ponyo-PNG-File.png">
-</div>
-
+<!-- MONTH -->
 <h3 id="monthLabel"></h3>
 
 <div class="container">
 
+<!-- CALENDAR -->
 <div class="calendar">
     <div class="grid" id="calendar"></div>
 </div>
 
+<!-- SIDEBAR -->
 <div class="sidebar hidden" id="sidebar">
 
 <button onclick="closeSidebar()">← Close</button>
@@ -181,6 +174,7 @@ input{
 
 <h3 id="selectedDay">Select a day</h3>
 
+<h3>👤 User</h3>
 <input id="userName" placeholder="Your name">
 <input type="color" id="userColor" value="#7c9a6d">
 <button onclick="setUser()">Set User</button>
@@ -224,57 +218,47 @@ function save(){
     localStorage.setItem("cozyData", JSON.stringify(data));
 }
 
-/* ✨ SPARKLES */
-function createSparkles(el){
-    for(let i=0;i<6;i++){
-        let s=document.createElement("div");
-        s.className="sparkle";
-        s.innerText="✨";
-        s.style.left=Math.random()*40+"px";
-        s.style.top=Math.random()*30+"px";
-        el.appendChild(s);
-        setTimeout(()=>s.remove(),800);
-    }
-}
-
 /* USER */
 function setUser(){
-    let name=document.getElementById("userName").value;
-    let color=document.getElementById("userColor").value;
+    let name = document.getElementById("userName").value;
+    let color = document.getElementById("userColor").value;
     if(!name) return;
 
-    data.currentUser=name;
+    data.currentUser = name;
 
     if(!data.users[name]){
-        data.users[name]={color};
+        data.users[name] = { color };
     }
 
-    document.getElementById("currentUser").innerText=name;
+    document.getElementById("currentUser").innerText = name;
     save();
 }
 
 /* CALENDAR */
 function buildCalendar(){
-    let cal=document.getElementById("calendar");
-    cal.innerHTML="";
+    let cal = document.getElementById("calendar");
+    cal.innerHTML = "";
 
-    let y=today.getFullYear();
-    let m=today.getMonth();
+    let y = today.getFullYear();
+    let m = today.getMonth();
 
-    document.getElementById("monthLabel").innerText=
-        today.toLocaleString('default',{month:'long'})+" "+y;
+    document.getElementById("monthLabel").innerText =
+        today.toLocaleString('default',{month:'long'}) + " " + y;
 
-    let first=new Date(y,m,1).getDay();
-    let days=new Date(y,m+1,0).getDate();
+    let first = new Date(y,m,1).getDay();
+    let days = new Date(y,m+1,0).getDate();
 
-    for(let i=0;i<first;i++) cal.innerHTML+="<div></div>";
+    for(let i=0;i<first;i++){
+        cal.innerHTML += `<div></div>`;
+    }
 
-    for(let d=1;d<=days;d++){
-        let key=`${y}-${m}-${d}`;
-        let dayTasks=data.tasks[key]?.items||[];
-        let coins=dayTasks.filter(t=>t.done).reduce((a,b)=>a+b.coins,0);
+    for(let d=1; d<=days; d++){
+        let key = `${y}-${m}-${d}`;
 
-        cal.innerHTML+=`
+        let dayTasks = data.tasks[key]?.items || [];
+        let coins = dayTasks.filter(t=>t.done).reduce((a,b)=>a+b.coins,0);
+
+        cal.innerHTML += `
         <div class="day" onclick="openDay('${key}',${d})">
             ${d}
             <small>🪙 ${coins}</small>
@@ -282,34 +266,41 @@ function buildCalendar(){
     }
 }
 
-/* SIDEBAR */
-function openDay(key,day){
-    selectedDay=key;
+/* OPEN / CLOSE SIDEBAR */
+function openDay(key, day){
+    selectedDay = key;
+
     document.getElementById("sidebar").classList.remove("hidden");
-    document.getElementById("selectedDay").innerText="Day "+day;
+    document.getElementById("selectedDay").innerText = "Day " + day;
+
     renderTasks();
 }
 
 function closeSidebar(){
     document.getElementById("sidebar").classList.add("hidden");
-    selectedDay=null;
+    selectedDay = null;
 }
 
 /* TASKS */
 function addTask(){
     if(!selectedDay) return;
 
-    let name=document.getElementById("taskInput").value;
-    let coins=parseInt(document.getElementById("coinInput").value)||0;
+    let nameInput = document.getElementById("taskInput");
+    let coinInput = document.getElementById("coinInput");
+
+    let name = nameInput.value;
+    let coins = parseInt(coinInput.value) || 0;
 
     if(!data.tasks[selectedDay]){
-        data.tasks[selectedDay]={items:[]};
+        data.tasks[selectedDay] = {items:[]};
     }
 
-    let user=data.users[data.currentUser]||{color:"#7c9a6d"};
+    let user = data.users[data.currentUser] || {color:"#7c9a6d"};
 
     data.tasks[selectedDay].items.push({
-        name,coins,done:false,
+        name,
+        coins,
+        done:false,
         user:data.currentUser,
         color:user.color
     });
@@ -318,47 +309,21 @@ function addTask(){
     renderTasks();
     buildCalendar();
 
-    document.getElementById("taskInput").value="";
-    document.getElementById("coinInput").value="";
+    // ✅ CLEAR INPUT FIELDS AFTER ADDING
+    nameInput.value = "";
+    coinInput.value = "";
+    nameInput.focus();
 }
 
-/* TOGGLE TASK */
-function toggleTask(i){
-    let t=data.tasks[selectedDay].items[i];
-
-    t.done=!t.done;
-
-    if(t.done){
-        data.coins+=t.coins;
-        data.lifetime+=t.coins;
-    } else {
-        data.coins-=t.coins;
-        data.lifetime-=t.coins;
-    }
-
-    // ✨ SPARKLES (FIXED)
-    let box=document.querySelector(`.day:nth-child(1)`);
-    let selectedBox=[...document.querySelectorAll(".day")]
-        .find(b=>b.innerText.includes(selectedDay.split("-")[2]));
-
-    if(selectedBox) createSparkles(selectedBox);
-
-    save();
-    renderTasks();
-    buildCalendar();
-    updateCoins();
-}
-
-/* RENDER TASKS */
 function renderTasks(){
-    let list=document.getElementById("taskList");
-    list.innerHTML="";
+    let list = document.getElementById("taskList");
+    list.innerHTML = "";
 
-    let day=data.tasks[selectedDay];
+    let day = data.tasks[selectedDay];
     if(!day) return;
 
     day.items.forEach((t,i)=>{
-        list.innerHTML+=`
+        list.innerHTML += `
         <div class="task ${t.done?'done':''}" style="border-left:6px solid ${t.color}">
             <span><b style="color:${t.color}">${t.user}</b>: ${t.name} (+${t.coins})</span>
             <div>
@@ -371,13 +336,31 @@ function renderTasks(){
     updateCoins();
 }
 
-/* DELETE TASK */
-function deleteTask(i){
-    let t=data.tasks[selectedDay].items[i];
+function toggleTask(i){
+    let t = data.tasks[selectedDay].items[i];
+
+    t.done = !t.done;
 
     if(t.done){
-        data.coins-=t.coins;
-        data.lifetime-=t.coins;
+        data.coins += t.coins;
+        data.lifetime += t.coins;
+    } else {
+        data.coins -= t.coins;
+        data.lifetime -= t.coins;
+    }
+
+    save();
+    renderTasks();
+    buildCalendar();
+    updateCoins();
+}
+
+function deleteTask(i){
+    let t = data.tasks[selectedDay].items[i];
+
+    if(t.done){
+        data.coins -= t.coins;
+        data.lifetime -= t.coins;
     }
 
     data.tasks[selectedDay].items.splice(i,1);
@@ -390,23 +373,28 @@ function deleteTask(i){
 
 /* REWARDS */
 function addReward(){
-    let name=document.getElementById("rewardName").value;
-    let cost=parseInt(document.getElementById("rewardCost").value);
+    let name = document.getElementById("rewardName").value;
+    let cost = parseInt(document.getElementById("rewardCost").value);
 
-    let user=data.users[data.currentUser]||{color:"#7c9a6d"};
+    let user = data.users[data.currentUser] || {color:"#7c9a6d"};
 
-    data.rewards.push({name,cost,user:data.currentUser,color:user.color});
+    data.rewards.push({
+        name,
+        cost,
+        user:data.currentUser,
+        color:user.color
+    });
 
     save();
     renderRewards();
 }
 
 function renderRewards(){
-    let list=document.getElementById("rewardList");
-    list.innerHTML="";
+    let list = document.getElementById("rewardList");
+    list.innerHTML = "";
 
     data.rewards.forEach((r,i)=>{
-        list.innerHTML+=`
+        list.innerHTML += `
         <div class="task" style="border-left:6px solid ${r.color}">
             <span><b style="color:${r.color}">${r.user}</b>: ${r.name} - 🪙${r.cost}</span>
             <button onclick="deleteReward(${i})">🗑</button>
@@ -420,10 +408,35 @@ function deleteReward(i){
     renderRewards();
 }
 
-/* COINS */
+/* COINS + STREAK */
 function updateCoins(){
-    document.getElementById("coins").innerText=data.coins;
-    document.getElementById("lifeCoins").innerText=data.lifetime;
+    document.getElementById("coins").innerText = data.coins;
+    document.getElementById("lifeCoins").innerText = data.lifetime;
+    document.getElementById("streak").innerText = getStreak();
+}
+
+function formatKey(d){
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function hasTasks(key){
+    let d = data.tasks[key];
+    if(!d) return false;
+    return d.items.some(t=>t.done);
+}
+
+function getStreak(){
+    let s=0;
+    let d=new Date();
+
+    while(true){
+        let k=formatKey(d);
+        if(hasTasks(k)){
+            s++;
+            d.setDate(d.getDate()-1);
+        } else break;
+    }
+    return s;
 }
 
 /* INIT */
