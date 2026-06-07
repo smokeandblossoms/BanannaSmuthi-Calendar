@@ -23,10 +23,21 @@ header{
     text-align:center;
 }
 
+/* STATS BAR */
+.statsBar{
+    background:#ffffffcc;
+    padding:10px;
+    text-align:center;
+    font-weight:bold;
+    display:flex;
+    justify-content:space-around;
+    flex-wrap:wrap;
+}
+
 /* LAYOUT */
 .container{
     display:flex;
-    height:calc(100vh - 200px);
+    height:calc(100vh - 220px);
 }
 
 /* CALENDAR */
@@ -41,12 +52,22 @@ header{
     gap:8px;
 }
 
+/* DAY TILE */
 .day{
-    background: rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.55);
     padding:10px;
     border-radius:10px;
     cursor:pointer;
-    min-height:60px;
+    min-height:70px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+}
+
+/* COIN TEXT */
+.coin{
+    font-size:12px;
+    opacity:0.85;
 }
 
 /* SIDEBAR */
@@ -61,7 +82,7 @@ header{
     display:none;
 }
 
-/* TASKS */
+/* TASK */
 .task{
     display:flex;
     justify-content:space-between;
@@ -84,7 +105,6 @@ button{
 .reward-item{
     display:flex;
     justify-content:space-between;
-    align-items:center;
     margin:6px 0;
     padding:6px;
     border:1px solid #ddd;
@@ -100,12 +120,11 @@ button{
     cursor:not-allowed;
 }
 
-/* COINS BOX */
-.coins{
-    background:#fff3c4cc;
-    padding:10px;
-    border-radius:8px;
-    margin-bottom:10px;
+/* INPUT */
+input{
+    width:100%;
+    margin:5px 0;
+    padding:6px;
 }
 </style>
 </head>
@@ -115,6 +134,14 @@ button{
 <header>
 <h2>🗓 The BanannaSmuthi Calendar</h2>
 </header>
+
+<!-- 🔥 TOP STATS (STREAK + USER) -->
+<div class="statsBar">
+    👤 User: <span id="userNameDisplay">Guest</span>
+    🔥 Streak: <span id="streak">0</span>
+    🪙 Available: <span id="available">0</span>
+    💰 Weekly: <span id="weekly">0</span>
+</div>
 
 <div class="container">
 
@@ -128,24 +155,25 @@ button{
 
 <button onclick="closeSidebar()">← Close</button>
 
-<div class="coins">
-🪙 Available Points: <span id="available">0</span><br>
-🪙 Lifetime Earned: <span id="lifetime">0</span><br>
-🎯 Reserved (selected rewards): <span id="reserved">0</span><br>
-💰 Available to Use: <span id="usable">0</span>
-</div>
-
 <h3 id="selectedDay"></h3>
+
+<!-- 👤 USER -->
+<h4>👤 Set Name</h4>
+<input id="userInput" placeholder="Your name">
+<button onclick="setUser()">Set Name</button>
+
+<hr>
 
 <!-- TASKS -->
 <input id="taskInput" placeholder="New task">
-<input id="coinInput" type="number" placeholder="Points">
+<input id="coinInput" type="number" placeholder="Coins">
 <button onclick="addTask()">Add Task</button>
 
 <div id="taskList"></div>
 
 <hr>
 
+<!-- REWARDS -->
 <h3>🎁 Rewards</h3>
 
 <input id="rewardName" placeholder="Reward name">
@@ -153,6 +181,8 @@ button{
 <button onclick="addReward()">Add Reward</button>
 
 <div id="rewardList"></div>
+
+<h4>🪙 Available to Use: <span id="usable">0</span></h4>
 
 </div>
 </div>
@@ -165,18 +195,29 @@ let data = JSON.parse(localStorage.getItem("cozyData")) || {
     tasks:{},
     rewards:[],
     available:0,
-    lifetime:0,
-    selectedRewards:[]
+    weekly:0,
+    user:"Guest"
 };
 
 function save(){
     localStorage.setItem("cozyData", JSON.stringify(data));
 }
 
+/* 👤 USER */
+function setUser(){
+    let name = document.getElementById("userInput").value;
+    if(!name) return;
+
+    data.user = name;
+    save();
+    updateUI();
+}
+
 /* OPEN DAY */
 function openDay(key){
     selectedDay = key;
     document.getElementById("sidebar").classList.remove("hidden");
+    document.getElementById("selectedDay").innerText = key;
     renderTasks();
 }
 
@@ -204,6 +245,7 @@ function addTask(){
 
     save();
     renderTasks();
+    buildCalendar();
     updateUI();
 }
 
@@ -215,33 +257,19 @@ function toggleTask(i){
 
     if(t.done){
         data.available += t.coins;
-        data.lifetime += t.coins;
+        data.weekly += t.coins;
     } else {
         data.available -= t.coins;
+        data.weekly -= t.coins;
     }
 
     save();
     renderTasks();
+    buildCalendar();
     updateUI();
 }
 
-/* DELETE TASK */
-function deleteTask(i){
-    let t = data.tasks[selectedDay].items[i];
-
-    if(t.done){
-        data.available -= t.coins;
-        data.lifetime -= t.coins;
-    }
-
-    data.tasks[selectedDay].items.splice(i,1);
-
-    save();
-    renderTasks();
-    updateUI();
-}
-
-/* ADD REWARD */
+/* REWARDS */
 function addReward(){
     let name = document.getElementById("rewardName").value;
     let cost = parseInt(document.getElementById("rewardCost").value)||0;
@@ -257,20 +285,7 @@ function addReward(){
     updateUI();
 }
 
-/* TOGGLE REWARD SELECTION */
-function toggleRewardSelect(i){
-    let index = data.selectedRewards.indexOf(i);
-
-    if(index === -1){
-        data.selectedRewards.push(i);
-    } else {
-        data.selectedRewards.splice(index,1);
-    }
-
-    updateUI();
-}
-
-/* CLAIM REWARD */
+/* CLAIM */
 function claimReward(i){
     let r = data.rewards[i];
 
@@ -287,7 +302,65 @@ function claimReward(i){
     updateUI();
 }
 
-/* RENDER TASKS */
+/* CALENDAR */
+function buildCalendar(){
+    let cal = document.getElementById("calendar");
+    cal.innerHTML = "";
+
+    for(let d=1; d<=30; d++){
+        let key = "day-"+d;
+
+        let coins = 0;
+
+        if(data.tasks[key]){
+            coins = data.tasks[key].items
+                .filter(t=>t.done)
+                .reduce((a,b)=>a+b.coins,0);
+        }
+
+        cal.innerHTML += `
+        <div class="day" onclick="openDay('${key}')">
+            Day ${d}
+            <div class="coin">🪙 ${coins}</div>
+        </div>`;
+    }
+}
+
+/* STREAK (SIMPLE LOGIC) */
+function getStreak(){
+    let streak = 0;
+
+    for(let i=1;i<=30;i++){
+        let key = "day-"+i;
+        if(data.tasks[key]?.items?.some(t=>t.done)){
+            streak++;
+        } else {
+            break;
+        }
+    }
+
+    return streak;
+}
+
+/* REWARDS RENDER */
+function renderRewards(){
+    let list = document.getElementById("rewardList");
+    list.innerHTML = "";
+
+    data.rewards.forEach((r,i)=>{
+        list.innerHTML += `
+        <div class="reward-item">
+            <span>${r.name} - 🪙${r.cost}</span>
+            <button class="claim-btn"
+                onclick="claimReward(${i})"
+                ${r.claimed ? "disabled" : ""}>
+                ${r.claimed ? "Claimed" : "Claim"}
+            </button>
+        </div>`;
+    });
+}
+
+/* TASKS */
 function renderTasks(){
     let list = document.getElementById("taskList");
     list.innerHTML = "";
@@ -304,66 +377,20 @@ function renderTasks(){
     });
 }
 
-/* RENDER REWARDS (WITH SELECT OPTION) */
-function renderRewards(){
-    let list = document.getElementById("rewardList");
-    list.innerHTML = "";
-
-    data.rewards.forEach((r,i)=>{
-
-        let selected = data.selectedRewards.includes(i);
-        let disabled = r.claimed ? "disabled" : "";
-
-        list.innerHTML += `
-        <div class="reward-item">
-            <div>
-                <input type="checkbox"
-                    onchange="toggleRewardSelect(${i})"
-                    ${selected ? "checked" : ""}>
-                ${r.name} - 🪙${r.cost}
-            </div>
-
-            <button class="claim-btn"
-                onclick="claimReward(${i})"
-                ${disabled}>
-                ${r.claimed ? "Claimed" : "Claim"}
-            </button>
-        </div>`;
-    });
-}
-
-/* UI UPDATE (KEY FEATURE HERE) */
+/* UI UPDATE */
 function updateUI(){
     document.getElementById("available").innerText = data.available;
-    document.getElementById("lifetime").innerText = data.lifetime;
+    document.getElementById("weekly").innerText = data.weekly;
+    document.getElementById("userNameDisplay").innerText = data.user;
+
+    document.getElementById("streak").innerText = getStreak();
 
     let reserved = 0;
-
-    data.selectedRewards.forEach(i=>{
-        if(data.rewards[i] && !data.rewards[i].claimed){
-            reserved += data.rewards[i].cost;
-        }
+    data.rewards.forEach(r=>{
+        if(!r.claimed) reserved += r.cost;
     });
 
-    let usable = data.available - reserved;
-
-    document.getElementById("reserved").innerText = reserved;
-    document.getElementById("usable").innerText = usable;
-}
-
-/* CALENDAR */
-function buildCalendar(){
-    let cal = document.getElementById("calendar");
-    cal.innerHTML = "";
-
-    for(let d=1; d<=30; d++){
-        let key = "day-"+d;
-
-        cal.innerHTML += `
-        <div class="day" onclick="openDay('${key}')">
-            Day ${d}
-        </div>`;
-    }
+    document.getElementById("usable").innerText = data.available - reserved;
 }
 
 /* INIT */
