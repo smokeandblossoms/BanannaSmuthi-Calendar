@@ -561,6 +561,7 @@ function toggleTask(i){
     renderTasks();
     buildCalendar();
     updateCoins();
+    renderRewards();
 
     if(t.done){
         setTimeout(() => {
@@ -571,11 +572,14 @@ function toggleTask(i){
 
 function deleteTask(i){
     if(!selectedDay) return;
+
     data.tasks[selectedDay].items.splice(i, 1);
+
     save();
     renderTasks();
     buildCalendar();
     updateCoins();
+    renderRewards();
 }
 
 function renderTasks(){
