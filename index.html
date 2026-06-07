@@ -285,8 +285,11 @@ function closeSidebar(){
 function addTask(){
     if(!selectedDay) return;
 
-    let name = document.getElementById("taskInput").value;
-    let coins = parseInt(document.getElementById("coinInput").value)||0;
+    let nameInput = document.getElementById("taskInput");
+    let coinInput = document.getElementById("coinInput");
+
+    let name = nameInput.value;
+    let coins = parseInt(coinInput.value) || 0;
 
     if(!data.tasks[selectedDay]){
         data.tasks[selectedDay] = {items:[]};
@@ -305,6 +308,10 @@ function addTask(){
     save();
     renderTasks();
     buildCalendar();
+
+    // ✅ CLEAR INPUT FIELDS AFTER ADDING
+    nameInput.value = "";
+    coinInput.value = "";
 }
 
 function renderTasks(){
