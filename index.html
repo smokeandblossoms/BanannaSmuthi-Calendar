@@ -23,17 +23,17 @@ header{
     text-align:center;
 }
 
-/* TOP BAR */
-.topBar{
-    background:#ffffffcc;
-    padding:10px;
-    display:flex;
-    justify-content:space-around;
-    flex-wrap:wrap;
+/* STREAK ONLY UNDER TITLE */
+#streakBox{
+    text-align:center;
+    font-size:18px;
     font-weight:bold;
+    color:white;
+    margin-bottom:10px;
+    text-shadow:0 2px 6px rgba(0,0,0,0.3);
 }
 
-/* MONTH TITLE */
+/* MONTH */
 #monthLabel{
     font-size:28px;
     text-align:center;
@@ -45,7 +45,7 @@ header{
 /* LAYOUT */
 .container{
     display:flex;
-    height:calc(100vh - 220px);
+    height:calc(100vh - 200px);
 }
 
 /* CALENDAR */
@@ -134,13 +134,9 @@ button{
 <h2>The BanannaSmuthi Calendar</h2>
 </header>
 
-<!-- TOP STATS -->
-<div class="topBar">
-👤 <span id="userName">Guest</span>
+<!-- 🔥 ONLY STREAK SHOWN HERE -->
+<div id="streakBox">
 🔥 Streak: <span id="streak">0</span>
-🪙 Coins: <span id="coins">0</span>
-📅 Weekly: <span id="weekly">0</span>
-💰 Usable: <span id="usable">0</span>
 </div>
 
 <h3 id="monthLabel"></h3>
@@ -190,7 +186,6 @@ let selectedDay = null;
 let data = JSON.parse(localStorage.getItem("cozyData")) || {
     tasks:{},
     coins:0,
-    weekly:0,
     lifetime:0,
     user:"Guest",
     rewards:[],
@@ -207,7 +202,6 @@ function setName(){
     if(!n) return;
     data.user = n;
     save();
-    updateUI();
 }
 
 /* CALENDAR */
@@ -231,8 +225,9 @@ function buildCalendar(){
     for(let d=1; d<=days; d++){
         let key = `${y}-${m}-${d}`;
 
-        let dayTasks = data.tasks[key]?.items || [];
-        let coins = dayTasks.filter(t=>t.done).reduce((a,b)=>a+b.coins,0);
+        let coins = data.tasks[key]?.items
+            ?.filter(t=>t.done)
+            ?.reduce((a,b)=>a+b.coins,0) || 0;
 
         cal.innerHTML += `
         <div class="day" onclick="openDay('${key}',${d})">
@@ -275,7 +270,6 @@ function addTask(){
     save();
     renderTasks();
     buildCalendar();
-    updateUI();
 }
 
 /* TOGGLE TASK */
@@ -285,23 +279,21 @@ function toggleTask(i){
 
     if(t.done){
         data.coins += t.coins;
-        data.weekly += t.coins;
         data.lifetime += t.coins;
     } else {
         data.coins -= t.coins;
-        data.weekly -= t.coins;
         data.lifetime -= t.coins;
     }
 
     save();
     renderTasks();
     buildCalendar();
-    updateUI();
+    updateStreak();
 
     animateCoin(selectedDay);
 }
 
-/* ⭐ ANIMATION */
+/* ANIMATION */
 function animateCoin(key){
     const el = document.getElementById(`coin-${key}`);
     if(!el) return;
@@ -313,17 +305,7 @@ function animateCoin(key){
     setTimeout(()=>el.classList.remove("animate"),600);
 }
 
-/* REWARDS */
-function toggleReward(i){
-    let idx = data.selectedRewards.indexOf(i);
-
-    if(idx === -1) data.selectedRewards.push(i);
-    else data.selectedRewards.splice(idx,1);
-
-    updateUI();
-}
-
-/* RENDER TASKS */
+/* TASK RENDER */
 function renderTasks(){
     let list = document.getElementById("taskList");
     list.innerHTML = "";
@@ -334,77 +316,73 @@ function renderTasks(){
     day.items.forEach((t,i)=>{
         list.innerHTML += `
         <div class="task">
-            <span>${t.name} (+${t.coins})</span>
+            ${t.name} (+${t.coins})
             <input type="checkbox" ${t.done?"checked":""}
             onchange="toggleTask(${i})">
         </div>`;
     });
 }
 
-/* REWARDS UI */
+/* 🔥 STREAK LOGIC (RESET IF ANY DAY MISSED) */
+function getStreak(){
+    let y = today.getFullYear();
+    let m = today.getMonth();
+
+    let days = new Date(y,m+1,0).getDate();
+
+    let streak = 0;
+
+    for(let d=1; d<=days; d++){
+        let key = `${y}-${m}-${d}`;
+
+        let done = data.tasks[key]?.items?.some(t=>t.done);
+
+        if(done){
+            streak++;
+        } else {
+            streak = 0; // RESET ON GAP
+        }
+    }
+
+    return streak;
+}
+
+function updateStreak(){
+    document.getElementById("streak").innerText = getStreak();
+}
+
+/* REWARDS */
+function toggleReward(i){
+    let idx = data.selectedRewards.indexOf(i);
+
+    if(idx === -1) data.selectedRewards.push(i);
+    else data.selectedRewards.splice(idx,1);
+}
+
+/* REWARD RENDER */
 function renderRewards(){
     let r = document.getElementById("rewardList");
     r.innerHTML = "";
 
     data.rewards.forEach((x,i)=>{
+
         let checked = data.selectedRewards.includes(i);
 
         r.innerHTML += `
         <div class="reward">
             <label>
                 <input type="checkbox"
-                    onchange="toggleReward(${i})"
-                    ${checked?"checked":""}>
+                onchange="toggleReward(${i})"
+                ${checked?"checked":""}>
                 ${x.name} - ${x.cost}
             </label>
         </div>`;
     });
 }
 
-/* UI */
-function updateUI(){
-
-    document.getElementById("userName").innerText = data.user;
-
-    document.getElementById("coins").innerText = data.coins;
-    document.getElementById("weekly").innerText = data.weekly;
-
-    document.getElementById("streak").innerText = getStreak();
-
-    let reserved = 0;
-    data.selectedRewards.forEach(i=>{
-        if(data.rewards[i]){
-            reserved += data.rewards[i].cost;
-        }
-    });
-
-    document.getElementById("usable").innerText =
-        data.coins - reserved;
-}
-
-/* STREAK */
-function getStreak(){
-    let s = 0;
-
-    let y = today.getFullYear();
-    let m = today.getMonth();
-
-    let days = new Date(y,m+1,0).getDate();
-
-    for(let d=1; d<=days; d++){
-        let key = `${y}-${m}-${d}`;
-
-        if(data.tasks[key]?.items?.some(t=>t.done)){
-            s++;
-        } else break;
-    }
-
-    return s;
-}
-
 /* INIT */
 buildCalendar();
-updateUI();
+updateStreak();
 
 </script>
 
