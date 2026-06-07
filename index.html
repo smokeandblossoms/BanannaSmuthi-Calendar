@@ -159,6 +159,17 @@ header{
     flex:1;
 }
 
+.reward.given{
+    background:#dff0d8;
+    border:2px solid #7c9a6d;
+    border-radius:8px;
+}
+
+.reward.given .reward-left{
+    color:#3f6f3f;
+    font-weight:bold;
+}
+
 button{
     background:#7c9a6d;
     color:white;
@@ -292,7 +303,7 @@ input{
 
 <div class="section">
     <h3>Rewards</h3>
-    <p class="redeemed">Rewards are global. Once redeemed, the reward disappears and its cost is subtracted from available points.</p>
+    <p class="redeemed">Rewards are global. Once redeemed, the reward disappears from available rewards and shows only on the day it was given.</p>
     <input id="rewardInput" placeholder="New reward...">
     <input id="rewardCostInput" type="number" min="0" placeholder="Reward cost">
     <button onclick="addReward()">Add Reward</button>
@@ -405,61 +416,17 @@ function getWeeklyCoins(){
 }
 
 function dayCountsForStreak(key){
-    /*
-      A day counts for the streak if the user has completed
-      at least one task OR earned any coins that day.
-    */
     return dayHasCompletedTask(key) || completedCoinTotalForDay(key) > 0;
 }
 
-function getMostRecentCompletedDate(){
-    let mostRecent = null;
-
-    Object.keys(data.tasks).forEach(key => {
-        if(dayCountsForStreak(key)){
-            const d = parseKey(key);
-
-            if(!mostRecent || d > mostRecent){
-                mostRecent = d;
-            }
-        }
-    });
-
-    return mostRecent;
-}
-
-function getCurrentStreak(){
-    /*
-      Streak rules:
-      - Adds 1 for each consecutive calendar day with at least one completed task / earned coin.
-      - Counts backward from the most recent completed day.
-      - Resets to 0 if a full day was missed after the most recent completed day.
-        Example:
-        Completed Monday and Tuesday, but today is Thursday and Wednesday was missed → streak is 0.
-      - If today is incomplete but yesterday was completed, the streak still shows.
-        Example:
-        Completed Monday and Tuesday, today is Wednesday morning → streak is 2.
-    */
-
-    const mostRecent = getMostRecentCompletedDate();
-    if(!mostRecent) return 0;
-
-    const todayClean = cleanDate(today);
-    const yesterday = cleanDate(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    // If the most recent completed day is older than yesterday, a day was missed, so reset.
-    if(mostRecent < yesterday){
-        return 0;
-    }
-
+function getStreakForDay(key){
     let streak = 0;
-    let cursor = cleanDate(mostRecent);
+    let cursor = parseKey(key);
 
     while(true){
-        const key = dateKey(cursor);
+        const cursorKey = dateKey(cursor);
 
-        if(dayCountsForStreak(key)){
+        if(dayCountsForStreak(cursorKey)){
             streak++;
             cursor.setDate(cursor.getDate() - 1);
         } else {
@@ -468,6 +435,14 @@ function getCurrentStreak(){
     }
 
     return streak;
+}
+
+function getCurrentStreak(){
+    if(selectedDay){
+        return getStreakForDay(selectedDay);
+    }
+
+    return getStreakForDay(dateKey(today));
 }
 
 function recalculateBalances(){
@@ -675,6 +650,8 @@ function addReward(){
 }
 
 function redeemReward(id){
+    if(!selectedDay) return;
+
     recalculateBalances();
 
     const index = data.rewards.findIndex(r => r.id === id);
@@ -688,9 +665,10 @@ function redeemReward(id){
     }
 
     data.redeemedRewards.push({
+        id: reward.id,
         name: reward.name,
         cost: reward.cost,
-        redeemedOn: dateKey(today)
+        redeemedOn: selectedDay
     });
 
     data.rewards.splice(index, 1);
@@ -715,12 +693,26 @@ function renderRewards(){
     const list = document.getElementById("rewardList");
     list.innerHTML = "";
 
+    recalculateBalances();
+
+    const redeemedForSelectedDay = data.redeemedRewards.filter(r => r.redeemedOn === selectedDay);
+
+    redeemedForSelectedDay.forEach(r => {
+        list.innerHTML += `
+        <div class="reward given">
+            <div class="reward-left">
+                🎁 Given on this day: ${escapeHTML(r.name)}
+                <span class="reward-cost"> — ${Number(r.cost || 0)} points</span>
+            </div>
+        </div>`;
+    });
+
     if(data.rewards.length === 0){
-        list.innerHTML = `<p class="empty">No rewards yet. Add one above.</p>`;
+        if(redeemedForSelectedDay.length === 0){
+            list.innerHTML = `<p class="empty">No rewards yet. Add one above.</p>`;
+        }
         return;
     }
-
-    recalculateBalances();
 
     data.rewards.forEach(r => {
         const canAfford = data.availableCoins >= Number(r.cost || 0);
