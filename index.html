@@ -405,24 +405,56 @@ function getWeeklyCoins(){
 }
 
 function dayCountsForStreak(key){
+    /*
+      A day counts for the streak if the user has completed
+      at least one task OR earned any coins that day.
+    */
     return dayHasCompletedTask(key) || completedCoinTotalForDay(key) > 0;
 }
 
-function getCurrentStreak(){
-    let streak = 0;
-    let cursor = cleanDate(today);
+function getMostRecentCompletedDate(){
+    let mostRecent = null;
 
+    Object.keys(data.tasks).forEach(key => {
+        if(dayCountsForStreak(key)){
+            const d = parseKey(key);
+
+            if(!mostRecent || d > mostRecent){
+                mostRecent = d;
+            }
+        }
+    });
+
+    return mostRecent;
+}
+
+function getCurrentStreak(){
     /*
       Streak rules:
-      - Today counts if the user has completed at least one task or earned any coins today.
-      - If today has not been completed yet, the streak can still show the streak from yesterday.
-      - Consecutive previous days are counted.
-      - The streak stops/reset as soon as a missed day is found.
+      - Adds 1 for each consecutive calendar day with at least one completed task / earned coin.
+      - Counts backward from the most recent completed day.
+      - Resets to 0 if a full day was missed after the most recent completed day.
+        Example:
+        Completed Monday and Tuesday, but today is Thursday and Wednesday was missed → streak is 0.
+      - If today is incomplete but yesterday was completed, the streak still shows.
+        Example:
+        Completed Monday and Tuesday, today is Wednesday morning → streak is 2.
     */
 
-    if(!dayCountsForStreak(dateKey(cursor))){
-        cursor.setDate(cursor.getDate() - 1);
+    const mostRecent = getMostRecentCompletedDate();
+    if(!mostRecent) return 0;
+
+    const todayClean = cleanDate(today);
+    const yesterday = cleanDate(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // If the most recent completed day is older than yesterday, a day was missed, so reset.
+    if(mostRecent < yesterday){
+        return 0;
     }
+
+    let streak = 0;
+    let cursor = cleanDate(mostRecent);
 
     while(true){
         const key = dateKey(cursor);
@@ -558,7 +590,6 @@ function addTask(){
     renderTasks();
     buildCalendar();
     updateCoins();
-    renderRewards();
 }
 
 function toggleTask(i){
