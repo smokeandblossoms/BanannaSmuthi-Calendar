@@ -24,13 +24,22 @@ header{
 }
 
 /* TOP BAR */
-.top{
+.topBar{
     background:#ffffffcc;
     padding:10px;
     display:flex;
     justify-content:space-around;
-    font-weight:bold;
     flex-wrap:wrap;
+    font-weight:bold;
+}
+
+/* MONTH TITLE */
+#monthLabel{
+    font-size:28px;
+    text-align:center;
+    color:white;
+    font-weight:bold;
+    margin:10px 0;
 }
 
 /* LAYOUT */
@@ -57,10 +66,21 @@ header{
     padding:10px;
     border-radius:10px;
     cursor:pointer;
-    min-height:70px;
-    display:flex;
-    flex-direction:column;
-    justify-content:space-between;
+    min-height:60px;
+}
+
+/* COIN */
+.coin-glitter{
+    display:inline-block;
+}
+.coin-glitter.animate{
+    animation: coinGlowBurst 600ms ease-out;
+}
+
+@keyframes coinGlowBurst{
+    0%{transform:scale(1);}
+    40%{transform:scale(1.4); text-shadow:0 0 10px gold;}
+    100%{transform:scale(1);}
 }
 
 /* SIDEBAR */
@@ -70,16 +90,13 @@ header{
     padding:15px;
     overflow:auto;
 }
-
-.sidebar.hidden{ display:none; }
+.sidebar.hidden{display:none;}
 
 /* TASK */
 .task{
     display:flex;
     justify-content:space-between;
-    margin:8px 0;
-    padding:8px;
-    border-bottom:1px solid #eee;
+    margin:6px 0;
 }
 
 /* REWARD */
@@ -90,7 +107,13 @@ header{
     padding:6px;
     background:white;
     border-radius:6px;
-    border:1px solid #ddd;
+}
+
+/* INPUT */
+input{
+    width:100%;
+    padding:6px;
+    margin:5px 0;
 }
 
 /* BUTTON */
@@ -102,41 +125,31 @@ button{
     border-radius:6px;
     cursor:pointer;
 }
-
-.claim-btn{
-    background:#ffb347;
-}
-.claim-btn:disabled{
-    background:#ccc;
-}
-input{
-    width:100%;
-    margin:5px 0;
-    padding:6px;
-}
 </style>
 </head>
 
 <body>
 
 <header>
-<h2>🗓 The BanannaSmuthi Calendar</h2>
+<h2>The BanannaSmuthi Calendar</h2>
 </header>
 
 <!-- TOP STATS -->
-<div class="top">
-👤 <span id="user">Guest</span>
+<div class="topBar">
+👤 <span id="userName">Guest</span>
 🔥 Streak: <span id="streak">0</span>
-🪙 Available: <span id="available">0</span>
+🪙 Coins: <span id="coins">0</span>
 📅 Weekly: <span id="weekly">0</span>
 💰 Usable: <span id="usable">0</span>
 </div>
+
+<h3 id="monthLabel"></h3>
 
 <div class="container">
 
 <!-- CALENDAR -->
 <div class="calendar">
-<div class="grid" id="calendar"></div>
+    <div class="grid" id="calendar"></div>
 </div>
 
 <!-- SIDEBAR -->
@@ -144,54 +157,51 @@ input{
 
 <button onclick="closeSidebar()">← Close</button>
 
-<h3 id="dayTitle"></h3>
+<h3 id="selectedDay"></h3>
 
-<!-- USER -->
+<!-- 👤 USER -->
 <h4>👤 Name</h4>
-<input id="nameInput">
+<input id="nameInput" placeholder="Enter name">
 <button onclick="setName()">Set Name</button>
 
 <hr>
 
 <!-- TASKS -->
-<input id="taskInput" placeholder="Task">
-<input id="coinInput" type="number" placeholder="Coins">
+<input id="taskInput" placeholder="New task...">
+<input id="coinInput" type="number" placeholder="Coin value">
 <button onclick="addTask()">Add Task</button>
 
-<div id="tasks"></div>
+<div id="taskList"></div>
 
 <hr>
 
 <!-- REWARDS -->
 <h3>🎁 Rewards</h3>
-
-<input id="rewardInput" placeholder="Reward">
-<input id="rewardCost" type="number" placeholder="Cost">
-<button onclick="addReward()">Add Reward</button>
-
-<div id="rewards"></div>
+<div id="rewardList"></div>
 
 </div>
 </div>
 
 <script>
 
+let today = new Date();
 let selectedDay = null;
 
-let data = JSON.parse(localStorage.getItem("data")) || {
+let data = JSON.parse(localStorage.getItem("cozyData")) || {
     tasks:{},
-    rewards:[],
-    available:0,
+    coins:0,
     weekly:0,
+    lifetime:0,
     user:"Guest",
+    rewards:[],
     selectedRewards:[]
 };
 
 function save(){
-    localStorage.setItem("data", JSON.stringify(data));
+    localStorage.setItem("cozyData", JSON.stringify(data));
 }
 
-/* USER */
+/* 👤 USER */
 function setName(){
     let n = document.getElementById("nameInput").value;
     if(!n) return;
@@ -200,12 +210,46 @@ function setName(){
     updateUI();
 }
 
-/* OPEN */
-function openDay(d){
-    selectedDay = d;
+/* CALENDAR */
+function buildCalendar(){
+    let cal = document.getElementById("calendar");
+    cal.innerHTML = "";
+
+    let y = today.getFullYear();
+    let m = today.getMonth();
+
+    document.getElementById("monthLabel").innerText =
+        today.toLocaleString('default',{month:'long'}) + " " + y;
+
+    let first = new Date(y,m,1).getDay();
+    let days = new Date(y,m+1,0).getDate();
+
+    for(let i=0;i<first;i++){
+        cal.innerHTML += `<div></div>`;
+    }
+
+    for(let d=1; d<=days; d++){
+        let key = `${y}-${m}-${d}`;
+
+        let dayTasks = data.tasks[key]?.items || [];
+        let coins = dayTasks.filter(t=>t.done).reduce((a,b)=>a+b.coins,0);
+
+        cal.innerHTML += `
+        <div class="day" onclick="openDay('${key}',${d})">
+            ${d}
+            <small class="coin-glitter" id="coin-${key}">🪙 ${coins}</small>
+        </div>`;
+    }
+}
+
+/* OPEN DAY */
+function openDay(key, day){
+    selectedDay = key;
     document.getElementById("sidebar").classList.remove("hidden");
-    document.getElementById("dayTitle").innerText = d;
+    document.getElementById("selectedDay").innerText = "Day " + day;
+
     renderTasks();
+    renderRewards();
 }
 
 /* CLOSE */
@@ -215,49 +259,61 @@ function closeSidebar(){
 
 /* TASKS */
 function addTask(){
-    let n = document.getElementById("taskInput").value;
-    let c = parseInt(document.getElementById("coinInput").value)||0;
+    let name = document.getElementById("taskInput").value;
+    let coins = parseInt(document.getElementById("coinInput").value)||0;
 
-    if(!data.tasks[selectedDay]) data.tasks[selectedDay]={items:[]};
+    if(!data.tasks[selectedDay]){
+        data.tasks[selectedDay]={items:[]};
+    }
 
-    data.tasks[selectedDay].items.push({name:n,coins:c,done:false});
+    data.tasks[selectedDay].items.push({
+        name,
+        coins,
+        done:false
+    });
 
-    save(); renderTasks(); build(); updateUI();
+    save();
+    renderTasks();
+    buildCalendar();
+    updateUI();
 }
 
 /* TOGGLE TASK */
 function toggleTask(i){
     let t = data.tasks[selectedDay].items[i];
-
     t.done = !t.done;
 
     if(t.done){
-        data.available += t.coins;
+        data.coins += t.coins;
         data.weekly += t.coins;
+        data.lifetime += t.coins;
     } else {
-        data.available -= t.coins;
+        data.coins -= t.coins;
         data.weekly -= t.coins;
+        data.lifetime -= t.coins;
     }
 
     save();
     renderTasks();
-    build();
+    buildCalendar();
     updateUI();
+
+    animateCoin(selectedDay);
+}
+
+/* ⭐ ANIMATION */
+function animateCoin(key){
+    const el = document.getElementById(`coin-${key}`);
+    if(!el) return;
+
+    el.classList.remove("animate");
+    void el.offsetWidth;
+    el.classList.add("animate");
+
+    setTimeout(()=>el.classList.remove("animate"),600);
 }
 
 /* REWARDS */
-function addReward(){
-    let n = document.getElementById("rewardInput").value;
-    let c = parseInt(document.getElementById("rewardCost").value)||0;
-
-    data.rewards.push({name:n,cost:c,claimed:false});
-
-    save();
-    renderRewards();
-    updateUI();
-}
-
-/* SELECT REWARD */
 function toggleReward(i){
     let idx = data.selectedRewards.indexOf(i);
 
@@ -267,115 +323,87 @@ function toggleReward(i){
     updateUI();
 }
 
-/* CLAIM */
-function claim(i){
-    let r = data.rewards[i];
-
-    if(data.available < r.cost){
-        alert("Not enough coins");
-        return;
-    }
-
-    data.available -= r.cost;
-    r.claimed = true;
-
-    save();
-    renderRewards();
-    updateUI();
-}
-
-/* CALENDAR */
-function build(){
-    let c = document.getElementById("calendar");
-    c.innerHTML = "";
-
-    for(let i=1;i<=30;i++){
-
-        let k = "day-"+i;
-
-        let coins = data.tasks[k]?.items
-            ?.filter(t=>t.done)
-            ?.reduce((a,b)=>a+b.coins,0) || 0;
-
-        c.innerHTML += `
-        <div class="day" onclick="openDay('${k}')">
-            Day ${i}
-            🪙 ${coins}
-        </div>`;
-    }
-}
-
-/* TASK RENDER */
+/* RENDER TASKS */
 function renderTasks(){
-    let t = document.getElementById("tasks");
-    t.innerHTML = "";
+    let list = document.getElementById("taskList");
+    list.innerHTML = "";
 
-    let d = data.tasks[selectedDay];
-    if(!d) return;
+    let day = data.tasks[selectedDay];
+    if(!day) return;
 
-    d.items.forEach((x,i)=>{
-        t.innerHTML += `
+    day.items.forEach((t,i)=>{
+        list.innerHTML += `
         <div class="task">
-            ${x.name} +${x.coins}
-            <input type="checkbox" ${x.done?"checked":""}
+            <span>${t.name} (+${t.coins})</span>
+            <input type="checkbox" ${t.done?"checked":""}
             onchange="toggleTask(${i})">
         </div>`;
     });
 }
 
-/* REWARD RENDER */
+/* REWARDS UI */
 function renderRewards(){
-    let r = document.getElementById("rewards");
+    let r = document.getElementById("rewardList");
     r.innerHTML = "";
 
     data.rewards.forEach((x,i)=>{
-
-        let selected = data.selectedRewards.includes(i);
+        let checked = data.selectedRewards.includes(i);
 
         r.innerHTML += `
         <div class="reward">
-            <input type="checkbox" onchange="toggleReward(${i})" ${selected?"checked":""}>
-            ${x.name} - ${x.cost}
-            <button onclick="claim(${i})" ${x.claimed?"disabled":""}>
-                ${x.claimed?"Claimed":"Claim"}
-            </button>
+            <label>
+                <input type="checkbox"
+                    onchange="toggleReward(${i})"
+                    ${checked?"checked":""}>
+                ${x.name} - ${x.cost}
+            </label>
         </div>`;
     });
 }
 
-/* STREAK */
-function streak(){
-    let s = 0;
-    for(let i=1;i<=30;i++){
-        let k = "day-"+i;
-        if(data.tasks[k]?.items?.some(t=>t.done)) s++;
-        else break;
-    }
-    return s;
-}
-
-/* UPDATE UI */
+/* UI */
 function updateUI(){
 
-    document.getElementById("user").innerText = data.user;
-    document.getElementById("available").innerText = data.available;
+    document.getElementById("userName").innerText = data.user;
+
+    document.getElementById("coins").innerText = data.coins;
     document.getElementById("weekly").innerText = data.weekly;
-    document.getElementById("streak").innerText = streak();
+
+    document.getElementById("streak").innerText = getStreak();
 
     let reserved = 0;
-
     data.selectedRewards.forEach(i=>{
-        if(data.rewards[i] && !data.rewards[i].claimed){
+        if(data.rewards[i]){
             reserved += data.rewards[i].cost;
         }
     });
 
     document.getElementById("usable").innerText =
-        data.available - reserved;
+        data.coins - reserved;
+}
+
+/* STREAK */
+function getStreak(){
+    let s = 0;
+
+    let y = today.getFullYear();
+    let m = today.getMonth();
+
+    let days = new Date(y,m+1,0).getDate();
+
+    for(let d=1; d<=days; d++){
+        let key = `${y}-${m}-${d}`;
+
+        if(data.tasks[key]?.items?.some(t=>t.done)){
+            s++;
+        } else break;
+    }
+
+    return s;
 }
 
 /* INIT */
-build();
+buildCalendar();
 updateUI();
 
 </script>
