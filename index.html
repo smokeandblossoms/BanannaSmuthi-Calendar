@@ -159,18 +159,6 @@ header{
     flex:1;
 }
 
-.reward.given{
-    background:#dff0d8;
-    border:2px solid #5f9f5f;
-    border-radius:10px;
-    color:#2f6f2f;
-    font-weight:bold;
-}
-
-.reward.given .reward-cost{
-    color:#2f6f2f;
-}
-
 button{
     background:#7c9a6d;
     color:white;
@@ -284,7 +272,7 @@ input{
 <button onclick="closeSidebar()">← Close</button>
 
 <div class="coins">
-    🫧 <strong id="helloName">Oiii!</strong><br>
+    👤 <strong id="helloName">Oiii!</strong><br>
     🪙 Available Points to Use: <span id="availableCoins">0</span><br>
     🪙 Daily Coins: <span id="dailyCoins">0</span><br>
     🪙 Weekly Coins: <span id="weeklyCoins">0</span><br>
@@ -304,7 +292,7 @@ input{
 
 <div class="section">
     <h3>Rewards</h3>
-    <p class="redeemed">Rewards are global. Once redeemed, the reward disappears from available rewards and shows only on the day it was given.</p>
+    <p class="redeemed">Rewards are global. Once redeemed, the reward disappears and its cost is subtracted from available points.</p>
     <input id="rewardInput" placeholder="New reward...">
     <input id="rewardCostInput" type="number" min="0" placeholder="Reward cost">
     <button onclick="addReward()">Add Reward</button>
@@ -369,7 +357,7 @@ function saveName(){
 
 function renderName(){
     const name = data.userName || "BanannaSmuthi";
-    document.getElementById("titleName").innerText = `${name}'s BanannaSmuthi Calendar`;
+    document.getElementById("titleName").innerText = `${name}'s Calendar`;
     document.getElementById("helloName").innerText = `Oiii, ${name}!`;
     document.getElementById("nameInput").value = data.userName || "";
 }
@@ -416,51 +404,41 @@ function getWeeklyCoins(){
     return total;
 }
 
-function dayCountsForStreak(key){
-    return dayHasCompletedTask(key) || completedCoinTotalForDay(key) > 0;
-}
-
-function getStreakForDay(key){
+function getCurrentStreak(){
     let streak = 0;
-    let cursor = parseKey(key);
+    let cursor = cleanDate(today);
 
     while(true){
-        const cursorKey = dateKey(cursor);
+        const key = dateKey(cursor);
 
-        if(dayCountsForStreak(cursorKey)){
+        if(dayHasCompletedTask(key)){
             streak++;
             cursor.setDate(cursor.getDate() - 1);
-        } else {
-            break;
+            continue;
         }
+
+        if(key === dateKey(today)){
+            cursor.setDate(cursor.getDate() - 1);
+            continue;
+        }
+
+        break;
     }
 
     return streak;
 }
 
-function getCurrentStreak(){
-    if(selectedDay){
-        return getStreakForDay(selectedDay);
-    }
-
-    return getStreakForDay(dateKey(today));
-}
-
 function recalculateBalances(){
     let earned = 0;
-
     Object.keys(data.tasks).forEach(key => {
         earned += completedCoinTotalForDay(key);
     });
 
-    const spent = data.redeemedRewards.reduce((sum, r) => {
-        return sum + Number(r.cost || 0);
-    }, 0);
+    const spent = data.redeemedRewards.reduce((sum, r) => sum + Number(r.cost || 0), 0);
 
     data.lifetime = earned;
     data.spentCoins = spent;
     data.availableCoins = Math.max(0, earned - spent);
-
     save();
 }
 
@@ -583,7 +561,6 @@ function toggleTask(i){
     renderTasks();
     buildCalendar();
     updateCoins();
-    renderRewards();
 
     if(t.done){
         setTimeout(() => {
@@ -594,14 +571,11 @@ function toggleTask(i){
 
 function deleteTask(i){
     if(!selectedDay) return;
-
     data.tasks[selectedDay].items.splice(i, 1);
-
     save();
     renderTasks();
     buildCalendar();
     updateCoins();
-    renderRewards();
 }
 
 function renderTasks(){
@@ -655,8 +629,6 @@ function addReward(){
 }
 
 function redeemReward(id){
-    if(!selectedDay) return;
-
     recalculateBalances();
 
     const index = data.rewards.findIndex(r => r.id === id);
@@ -664,16 +636,15 @@ function redeemReward(id){
 
     const reward = data.rewards[index];
 
-    if(data.availableCoins < Number(reward.cost || 0)){
+    if(data.availableCoins < reward.cost){
         alert("Not enough available points for this reward yet.");
         return;
     }
 
     data.redeemedRewards.push({
-        id: reward.id,
         name: reward.name,
         cost: reward.cost,
-        redeemedOn: selectedDay
+        redeemedOn: dateKey(today)
     });
 
     data.rewards.splice(index, 1);
@@ -698,26 +669,12 @@ function renderRewards(){
     const list = document.getElementById("rewardList");
     list.innerHTML = "";
 
-    recalculateBalances();
-
-    const redeemedForThisDay = data.redeemedRewards.filter(r => r.redeemedOn === selectedDay);
-
-    redeemedForThisDay.forEach(r => {
-        list.innerHTML += `
-        <div class="reward given">
-            <div class="reward-left">
-                🎁 Reward given on this day: ${escapeHTML(r.name)}
-                <span class="reward-cost"> — ${Number(r.cost || 0)} points</span>
-            </div>
-        </div>`;
-    });
-
     if(data.rewards.length === 0){
-        if(redeemedForThisDay.length === 0){
-            list.innerHTML = `<p class="empty">No rewards yet. Add one above.</p>`;
-        }
+        list.innerHTML = `<p class="empty">No rewards yet. Add one above.</p>`;
         return;
     }
+
+    recalculateBalances();
 
     data.rewards.forEach(r => {
         const canAfford = data.availableCoins >= Number(r.cost || 0);
