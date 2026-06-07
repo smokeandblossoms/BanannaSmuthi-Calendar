@@ -23,21 +23,20 @@ header{
     text-align:center;
 }
 
-/* TOP STATS */
-.statsBar{
+/* TOP BAR */
+.top{
     background:#ffffffcc;
     padding:10px;
-    text-align:center;
     display:flex;
     justify-content:space-around;
-    flex-wrap:wrap;
     font-weight:bold;
+    flex-wrap:wrap;
 }
 
 /* LAYOUT */
 .container{
     display:flex;
-    height:calc(100vh - 240px);
+    height:calc(100vh - 220px);
 }
 
 /* CALENDAR */
@@ -52,9 +51,9 @@ header{
     gap:8px;
 }
 
-/* DAY TILE */
+/* DAY */
 .day{
-    background: rgba(255,255,255,0.55);
+    background: rgba(255,255,255,0.5);
     padding:10px;
     border-radius:10px;
     cursor:pointer;
@@ -62,12 +61,6 @@ header{
     display:flex;
     flex-direction:column;
     justify-content:space-between;
-}
-
-/* COIN TEXT */
-.coin{
-    font-size:12px;
-    opacity:0.85;
 }
 
 /* SIDEBAR */
@@ -78,9 +71,7 @@ header{
     overflow:auto;
 }
 
-.sidebar.hidden{
-    display:none;
-}
+.sidebar.hidden{ display:none; }
 
 /* TASK */
 .task{
@@ -91,19 +82,18 @@ header{
     border-bottom:1px solid #eee;
 }
 
-/* REWARD ITEM */
+/* REWARD */
 .reward{
     display:flex;
     justify-content:space-between;
-    align-items:center;
     margin:6px 0;
     padding:6px;
-    border:1px solid #ddd;
-    border-radius:6px;
     background:white;
+    border-radius:6px;
+    border:1px solid #ddd;
 }
 
-/* BUTTONS */
+/* BUTTON */
 button{
     background:#7c9a6d;
     color:white;
@@ -118,10 +108,7 @@ button{
 }
 .claim-btn:disabled{
     background:#ccc;
-    cursor:not-allowed;
 }
-
-/* INPUT */
 input{
     width:100%;
     margin:5px 0;
@@ -136,19 +123,20 @@ input{
 <h2>🗓 The BanannaSmuthi Calendar</h2>
 </header>
 
-<!-- 🔥 TOP STATS -->
-<div class="statsBar">
-    👤 User: <span id="userDisplay">Guest</span>
-    🔥 Streak: <span id="streak">0</span>
-    🪙 Available: <span id="available">0</span>
-    📅 Weekly: <span id="weekly">0</span>
+<!-- TOP STATS -->
+<div class="top">
+👤 <span id="user">Guest</span>
+🔥 Streak: <span id="streak">0</span>
+🪙 Available: <span id="available">0</span>
+📅 Weekly: <span id="weekly">0</span>
+💰 Usable: <span id="usable">0</span>
 </div>
 
 <div class="container">
 
 <!-- CALENDAR -->
 <div class="calendar">
-    <div class="grid" id="calendar"></div>
+<div class="grid" id="calendar"></div>
 </div>
 
 <!-- SIDEBAR -->
@@ -156,36 +144,32 @@ input{
 
 <button onclick="closeSidebar()">← Close</button>
 
-<h3 id="selectedDay"></h3>
+<h3 id="dayTitle"></h3>
 
-<!-- 👤 USER -->
+<!-- USER -->
 <h4>👤 Name</h4>
-<input id="userInput" placeholder="Enter name">
-<button onclick="setUser()">Set Name</button>
+<input id="nameInput">
+<button onclick="setName()">Set Name</button>
 
 <hr>
 
 <!-- TASKS -->
-<input id="taskInput" placeholder="New task">
+<input id="taskInput" placeholder="Task">
 <input id="coinInput" type="number" placeholder="Coins">
 <button onclick="addTask()">Add Task</button>
 
-<div id="taskList"></div>
+<div id="tasks"></div>
 
 <hr>
 
 <!-- REWARDS -->
 <h3>🎁 Rewards</h3>
 
-<input id="rewardName" placeholder="Reward name">
+<input id="rewardInput" placeholder="Reward">
 <input id="rewardCost" type="number" placeholder="Cost">
 <button onclick="addReward()">Add Reward</button>
 
-<div id="rewardList"></div>
-
-<hr>
-
-<h4>🪙 Available to Use: <span id="usable">0</span></h4>
+<div id="rewards"></div>
 
 </div>
 </div>
@@ -194,7 +178,7 @@ input{
 
 let selectedDay = null;
 
-let data = JSON.parse(localStorage.getItem("cozyData")) || {
+let data = JSON.parse(localStorage.getItem("data")) || {
     tasks:{},
     rewards:[],
     available:0,
@@ -204,23 +188,23 @@ let data = JSON.parse(localStorage.getItem("cozyData")) || {
 };
 
 function save(){
-    localStorage.setItem("cozyData", JSON.stringify(data));
+    localStorage.setItem("data", JSON.stringify(data));
 }
 
-/* 👤 USER */
-function setUser(){
-    let name = document.getElementById("userInput").value;
-    if(!name) return;
-    data.user = name;
+/* USER */
+function setName(){
+    let n = document.getElementById("nameInput").value;
+    if(!n) return;
+    data.user = n;
     save();
     updateUI();
 }
 
-/* OPEN DAY */
-function openDay(key){
-    selectedDay = key;
+/* OPEN */
+function openDay(d){
+    selectedDay = d;
     document.getElementById("sidebar").classList.remove("hidden");
-    document.getElementById("selectedDay").innerText = key;
+    document.getElementById("dayTitle").innerText = d;
     renderTasks();
 }
 
@@ -231,25 +215,14 @@ function closeSidebar(){
 
 /* TASKS */
 function addTask(){
-    if(!selectedDay) return;
+    let n = document.getElementById("taskInput").value;
+    let c = parseInt(document.getElementById("coinInput").value)||0;
 
-    let name = document.getElementById("taskInput").value;
-    let coins = parseInt(document.getElementById("coinInput").value)||0;
+    if(!data.tasks[selectedDay]) data.tasks[selectedDay]={items:[]};
 
-    if(!data.tasks[selectedDay]){
-        data.tasks[selectedDay]={items:[]};
-    }
+    data.tasks[selectedDay].items.push({name:n,coins:c,done:false});
 
-    data.tasks[selectedDay].items.push({
-        name,
-        coins,
-        done:false
-    });
-
-    save();
-    renderTasks();
-    buildCalendar();
-    updateUI();
+    save(); renderTasks(); build(); updateUI();
 }
 
 /* TOGGLE TASK */
@@ -268,40 +241,38 @@ function toggleTask(i){
 
     save();
     renderTasks();
-    buildCalendar();
+    build();
     updateUI();
 }
 
 /* REWARDS */
 function addReward(){
-    let name = document.getElementById("rewardName").value;
-    let cost = parseInt(document.getElementById("rewardCost").value)||0;
+    let n = document.getElementById("rewardInput").value;
+    let c = parseInt(document.getElementById("rewardCost").value)||0;
 
-    data.rewards.push({name,cost,claimed:false});
+    data.rewards.push({name:n,cost:c,claimed:false});
+
     save();
     renderRewards();
     updateUI();
 }
 
-/* SELECT REWARD (PREVIEW COST) */
-function toggleRewardSelect(i){
+/* SELECT REWARD */
+function toggleReward(i){
     let idx = data.selectedRewards.indexOf(i);
 
-    if(idx === -1){
-        data.selectedRewards.push(i);
-    } else {
-        data.selectedRewards.splice(idx,1);
-    }
+    if(idx === -1) data.selectedRewards.push(i);
+    else data.selectedRewards.splice(idx,1);
 
     updateUI();
 }
 
 /* CLAIM */
-function claimReward(i){
+function claim(i){
     let r = data.rewards[i];
 
     if(data.available < r.cost){
-        alert("Not enough points!");
+        alert("Not enough coins");
         return;
     }
 
@@ -314,92 +285,85 @@ function claimReward(i){
 }
 
 /* CALENDAR */
-function buildCalendar(){
-    let cal = document.getElementById("calendar");
-    cal.innerHTML = "";
+function build(){
+    let c = document.getElementById("calendar");
+    c.innerHTML = "";
 
-    for(let d=1; d<=30; d++){
-        let key = "day-"+d;
+    for(let i=1;i<=30;i++){
 
-        let coins = 0;
-        if(data.tasks[key]){
-            coins = data.tasks[key].items
-                .filter(t=>t.done)
-                .reduce((a,b)=>a+b.coins,0);
-        }
+        let k = "day-"+i;
 
-        cal.innerHTML += `
-        <div class="day" onclick="openDay('${key}')">
-            Day ${d}
-            <div class="coin">🪙 ${coins}</div>
+        let coins = data.tasks[k]?.items
+            ?.filter(t=>t.done)
+            ?.reduce((a,b)=>a+b.coins,0) || 0;
+
+        c.innerHTML += `
+        <div class="day" onclick="openDay('${k}')">
+            Day ${i}
+            🪙 ${coins}
         </div>`;
     }
 }
 
-/* STREAK */
-function getStreak(){
-    let streak = 0;
-    for(let i=1;i<=30;i++){
-        let k = "day-"+i;
-        if(data.tasks[k]?.items?.some(t=>t.done)){
-            streak++;
-        } else break;
-    }
-    return streak;
+/* TASK RENDER */
+function renderTasks(){
+    let t = document.getElementById("tasks");
+    t.innerHTML = "";
+
+    let d = data.tasks[selectedDay];
+    if(!d) return;
+
+    d.items.forEach((x,i)=>{
+        t.innerHTML += `
+        <div class="task">
+            ${x.name} +${x.coins}
+            <input type="checkbox" ${x.done?"checked":""}
+            onchange="toggleTask(${i})">
+        </div>`;
+    });
 }
 
-/* REWARDS RENDER */
+/* REWARD RENDER */
 function renderRewards(){
-    let list = document.getElementById("rewardList");
-    list.innerHTML = "";
+    let r = document.getElementById("rewards");
+    r.innerHTML = "";
 
-    data.rewards.forEach((r,i)=>{
+    data.rewards.forEach((x,i)=>{
+
         let selected = data.selectedRewards.includes(i);
 
-        list.innerHTML += `
+        r.innerHTML += `
         <div class="reward">
-            <div>
-                <input type="checkbox"
-                    onchange="toggleRewardSelect(${i})"
-                    ${selected ? "checked":""}>
-                ${r.name} - 🪙${r.cost}
-            </div>
-
-            <button class="claim-btn"
-                onclick="claimReward(${i})"
-                ${r.claimed ? "disabled":""}>
-                ${r.claimed ? "Claimed":"Claim"}
+            <input type="checkbox" onchange="toggleReward(${i})" ${selected?"checked":""}>
+            ${x.name} - ${x.cost}
+            <button onclick="claim(${i})" ${x.claimed?"disabled":""}>
+                ${x.claimed?"Claimed":"Claim"}
             </button>
         </div>`;
     });
 }
 
-/* TASKS */
-function renderTasks(){
-    let list = document.getElementById("taskList");
-    list.innerHTML = "";
-
-    let day = data.tasks[selectedDay];
-    if(!day) return;
-
-    day.items.forEach((t,i)=>{
-        list.innerHTML += `
-        <div class="task">
-            <span>${t.name} (+${t.coins})</span>
-            <input type="checkbox" ${t.done?"checked":""}
-                onchange="toggleTask(${i})">
-        </div>`;
-    });
+/* STREAK */
+function streak(){
+    let s = 0;
+    for(let i=1;i<=30;i++){
+        let k = "day-"+i;
+        if(data.tasks[k]?.items?.some(t=>t.done)) s++;
+        else break;
+    }
+    return s;
 }
 
-/* UI */
+/* UPDATE UI */
 function updateUI(){
+
+    document.getElementById("user").innerText = data.user;
     document.getElementById("available").innerText = data.available;
     document.getElementById("weekly").innerText = data.weekly;
-    document.getElementById("userDisplay").innerText = data.user;
-    document.getElementById("streak").innerText = getStreak();
+    document.getElementById("streak").innerText = streak();
 
     let reserved = 0;
+
     data.selectedRewards.forEach(i=>{
         if(data.rewards[i] && !data.rewards[i].claimed){
             reserved += data.rewards[i].cost;
@@ -411,7 +375,7 @@ function updateUI(){
 }
 
 /* INIT */
-buildCalendar();
+build();
 updateUI();
 
 </script>
