@@ -9,20 +9,10 @@
 body{
     margin:0;
     font-family: Arial, sans-serif;
-
     background-image: url("https://i.pinimg.com/736x/3f/4a/94/3f4a9446596e53d3d82814bf6c042e0d.jpg");
     background-size: cover;
     background-position: center;
-    background-repeat: no-repeat;
     background-attachment: fixed;
-}
-
-/* HEADER */
-header{
-    background:#7c9a6d;
-    color:white;
-    padding:15px;
-    text-align:center;
 }
 
 /* LAYOUT */
@@ -63,7 +53,7 @@ header{
     display:none;
 }
 
-/* TASKS */
+/* TASK */
 .task{
     display:flex;
     justify-content:space-between;
@@ -82,7 +72,7 @@ button{
     cursor:pointer;
 }
 
-/* REWARD BUTTON */
+/* CLAIM BUTTON */
 .claim-btn{
     background:#ffb347;
 }
@@ -91,7 +81,7 @@ button{
     cursor:not-allowed;
 }
 
-/* COINS BOX */
+/* BOX */
 .coins{
     background:#fff3c4cc;
     padding:10px;
@@ -102,10 +92,6 @@ button{
 </head>
 
 <body>
-
-<header>
-<h2>🗓 The BanannaSmuthi Calendar</h2>
-</header>
 
 <div class="container">
 
@@ -126,6 +112,7 @@ button{
 
 <h3 id="selectedDay"></h3>
 
+<!-- TASKS -->
 <input id="taskInput" placeholder="New task">
 <input id="coinInput" type="number" placeholder="Points">
 <button onclick="addTask()">Add Task</button>
@@ -134,6 +121,7 @@ button{
 
 <hr>
 
+<!-- 🎁 REWARD CREATION (RESTORED) -->
 <h3>🎁 Rewards</h3>
 
 <input id="rewardName" placeholder="Reward name">
@@ -142,6 +130,7 @@ button{
 
 <div id="rewardList"></div>
 
+<!-- AVAILABLE POINTS DISPLAY -->
 <h4>🪙 Points available for rewards:</h4>
 <div id="rewardPoints">0</div>
 
@@ -231,10 +220,12 @@ function deleteTask(i){
     updateUI();
 }
 
-/* ADD REWARD */
+/* 🎁 ADD REWARD (FIXED + RESTORED) */
 function addReward(){
     let name = document.getElementById("rewardName").value;
     let cost = parseInt(document.getElementById("rewardCost").value)||0;
+
+    if(!name || cost <= 0) return;
 
     data.rewards.push({
         name,
@@ -245,6 +236,9 @@ function addReward(){
     save();
     renderRewards();
     updateUI();
+
+    document.getElementById("rewardName").value = "";
+    document.getElementById("rewardCost").value = "";
 }
 
 /* CLAIM REWARD */
