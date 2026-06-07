@@ -161,13 +161,14 @@ header{
 
 .reward.given{
     background:#dff0d8;
-    border:2px solid #7c9a6d;
-    border-radius:8px;
+    border:2px solid #5f9f5f;
+    border-radius:10px;
+    color:#2f6f2f;
+    font-weight:bold;
 }
 
-.reward.given .reward-left{
-    color:#3f6f3f;
-    font-weight:bold;
+.reward.given .reward-cost{
+    color:#2f6f2f;
 }
 
 button{
@@ -447,15 +448,19 @@ function getCurrentStreak(){
 
 function recalculateBalances(){
     let earned = 0;
+
     Object.keys(data.tasks).forEach(key => {
         earned += completedCoinTotalForDay(key);
     });
 
-    const spent = data.redeemedRewards.reduce((sum, r) => sum + Number(r.cost || 0), 0);
+    const spent = data.redeemedRewards.reduce((sum, r) => {
+        return sum + Number(r.cost || 0);
+    }, 0);
 
     data.lifetime = earned;
     data.spentCoins = spent;
     data.availableCoins = Math.max(0, earned - spent);
+
     save();
 }
 
@@ -659,7 +664,7 @@ function redeemReward(id){
 
     const reward = data.rewards[index];
 
-    if(data.availableCoins < reward.cost){
+    if(data.availableCoins < Number(reward.cost || 0)){
         alert("Not enough available points for this reward yet.");
         return;
     }
@@ -695,20 +700,20 @@ function renderRewards(){
 
     recalculateBalances();
 
-    const redeemedForSelectedDay = data.redeemedRewards.filter(r => r.redeemedOn === selectedDay);
+    const redeemedForThisDay = data.redeemedRewards.filter(r => r.redeemedOn === selectedDay);
 
-    redeemedForSelectedDay.forEach(r => {
+    redeemedForThisDay.forEach(r => {
         list.innerHTML += `
         <div class="reward given">
             <div class="reward-left">
-                🎁 Given on this day: ${escapeHTML(r.name)}
+                🎁 Reward given on this day: ${escapeHTML(r.name)}
                 <span class="reward-cost"> — ${Number(r.cost || 0)} points</span>
             </div>
         </div>`;
     });
 
     if(data.rewards.length === 0){
-        if(redeemedForSelectedDay.length === 0){
+        if(redeemedForThisDay.length === 0){
             list.innerHTML = `<p class="empty">No rewards yet. Add one above.</p>`;
         }
         return;
